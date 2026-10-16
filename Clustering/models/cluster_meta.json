@@ -1,0 +1,62 @@
+{
+  "algorithm": "KMeans",
+  "k": 4,
+  "random_state": 42,
+  "n_samples": 8950,
+  "n_features": 21,
+  "feature_names": [
+    "BALANCE",
+    "BALANCE_FREQUENCY",
+    "PURCHASES",
+    "ONEOFF_PURCHASES",
+    "INSTALLMENTS_PURCHASES",
+    "CASH_ADVANCE",
+    "PURCHASES_FREQUENCY",
+    "ONEOFF_PURCHASES_FREQUENCY",
+    "PURCHASES_INSTALLMENTS_FREQUENCY",
+    "CASH_ADVANCE_FREQUENCY",
+    "CASH_ADVANCE_TRX",
+    "PURCHASES_TRX",
+    "CREDIT_LIMIT",
+    "PAYMENTS",
+    "MINIMUM_PAYMENTS",
+    "PRC_FULL_PAYMENT",
+    "TENURE",
+    "BALANCE_TO_LIMIT",
+    "PAYMENT_TO_MIN_RATIO",
+    "AVG_PURCHASE_PER_TRX",
+    "AVG_CASH_ADV_PER_TRX"
+  ],
+  "raw_features": [
+    "BALANCE",
+    "BALANCE_FREQUENCY",
+    "PURCHASES",
+    "ONEOFF_PURCHASES",
+    "INSTALLMENTS_PURCHASES",
+    "CASH_ADVANCE",
+    "PURCHASES_FREQUENCY",
+    "ONEOFF_PURCHASES_FREQUENCY",
+    "PURCHASES_INSTALLMENTS_FREQUENCY",
+    "CASH_ADVANCE_FREQUENCY",
+    "CASH_ADVANCE_TRX",
+    "PURCHASES_TRX",
+    "CREDIT_LIMIT",
+    "PAYMENTS",
+    "MINIMUM_PAYMENTS",
+    "PRC_FULL_PAYMENT",
+    "TENURE"
+  ],
+  "metrics": {
+    "Silhouette": 0.20961917098642086,
+    "Davies-Bouldin": 1.7644319638093287,
+    "Calinski-Harabasz": 2348.9164443735744
+  },
+  "cluster_sizes": {
+    "0": 2545,
+    "1": 2351,
+    "2": 1944,
+    "3": 2110
+  },
+  "preprocessor": "cluster_preprocessor.pkl",
+  "model": "kmeans_k4.pkl"
+}

@@ -128,11 +128,13 @@ st.markdown("""
 # ─────────────────────────────────────────────────────────────
 #  PATHS & MODEL LOADING
 # ─────────────────────────────────────────────────────────────
-BASE       = os.path.dirname(os.path.abspath(__file__))
-CLS_DIR    = os.path.join(BASE, "ML_CLASSIFICATION_TRACKA")
-REG_DIR    = os.path.join(BASE, "Regression Track A")
-CLS_MODELS = os.path.join(CLS_DIR, "models")
-REG_MODELS = os.path.join(REG_DIR, "models")
+BASE        = os.path.dirname(os.path.abspath(__file__))
+CLS_DIR     = os.path.join(BASE, "ML_CLASSIFICATION_TRACKA")
+REG_DIR     = os.path.join(BASE, "Regression Track A")
+CLUST_DIR   = os.path.join(BASE, "Clustering")
+CLS_MODELS  = os.path.join(CLS_DIR,   "models")
+REG_MODELS  = os.path.join(REG_DIR,   "models")
+CLUST_MODELS = os.path.join(CLUST_DIR, "models")
 
 
 @st.cache_resource
@@ -173,6 +175,31 @@ def load_reg_artifacts():
     feat_cols = joblib.load(os.path.join(REG_MODELS, "reg_feature_cols.pkl"))
     bounds    = joblib.load(os.path.join(REG_MODELS, "reg_clip_bounds.pkl"))
     return imputer, scaler, feat_cols, bounds
+
+
+@st.cache_resource
+def load_cluster_artifacts():
+    import json, sys
+    # Make clustering_preprocessing importable when unpickling the preprocessor pipeline
+    app_dir = os.path.join(CLUST_DIR, "app")
+    if app_dir not in sys.path:
+        sys.path.insert(0, app_dir)
+    preprocessor = joblib.load(os.path.join(CLUST_MODELS, "cluster_preprocessor.pkl"))
+    kmeans       = joblib.load(os.path.join(CLUST_MODELS, "kmeans_k4.pkl"))
+    centroids    = pd.read_csv(os.path.join(CLUST_MODELS, "kmeans_k4_centroids.csv"), index_col=0)
+    labels_df    = pd.read_csv(os.path.join(CLUST_MODELS, "kmeans_k4_labels.csv"), index_col=0)
+    with open(os.path.join(CLUST_MODELS, "cluster_meta.json")) as f:
+        meta = json.load(f)
+    return preprocessor, kmeans, centroids, labels_df, meta
+
+
+@st.cache_data
+def load_cc_data():
+    csv_path = os.path.join(CLUST_DIR, "CC GENERAL.csv")
+    df = pd.read_csv(csv_path)
+    if "CUST_ID" in df.columns:
+        df = df.drop(columns=["CUST_ID"])
+    return df
 
 
 @st.cache_data
@@ -257,24 +284,62 @@ with st.sidebar:
     st.markdown("<p style='color:#8b949e;font-size:0.82rem;'>Unified ML Dashboard</p>", unsafe_allow_html=True)
     st.markdown("---")
 
-    page = st.radio(
-        "Navigate",
-        ["🏠  Home",
-         "🔭  Classification",
-         "📈  Regression",
-         "🔵  Clustering",
-         "📊  EDA Explorer"],
-        label_visibility="collapsed",
-    )
+    # ── nav bar buttons ──────────────────────────────────
+    st.markdown("""
+<style>
+div[data-testid="stSidebar"] button {
+    width: 100% !important;
+    text-align: left !important;
+    background: #161b22 !important;
+    color: #e6edf3 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    margin-bottom: 6px !important;
+    font-size: 0.95rem !important;
+    font-weight: 500 !important;
+    transition: background 0.15s, border-color 0.15s !important;
+}
+div[data-testid="stSidebar"] button:hover {
+    background: #21262d !important;
+    border-color: #58a6ff !important;
+    color: #58a6ff !important;
+}
+div[data-testid="stSidebar"] button[kind="primary"] {
+    background: linear-gradient(135deg,#1a3a5c,#1f4a7a) !important;
+    border-color: #58a6ff !important;
+    color: #58a6ff !important;
+    font-weight: 700 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+    if "page" not in st.session_state:
+        st.session_state["page"] = "🏠  Home"
+
+    nav_items = [
+        ("🏠  Home",           "🏠  Home"),
+        ("🔭  Classification", "🔭  Classification"),
+        ("📈  Regression",     "📈  Regression"),
+        ("🔵  Clustering",     "🔵  Clustering"),
+        ("📊  EDA Explorer",   "📊  EDA Explorer"),
+    ]
+    for label, key in nav_items:
+        kind = "primary" if st.session_state["page"] == key else "secondary"
+        if st.button(label, key=f"nav_{key}", type=kind, use_container_width=True):
+            st.session_state["page"] = key
+            st.rerun()
+
+    page = st.session_state["page"]
 
     st.markdown("---")
     st.markdown("""
-<div style='font-size:0.75rem;color:#8b949e'>
-<b>Tracks</b><br>
-🔭 Star Classification (SDSS)<br>
-📈 Community Crime Regression<br>
-🔵 Clustering (new)<br>
-📊 EDA Explorer
+<div style='font-size:0.75rem;color:#8b949e;line-height:1.8'>
+<b style='color:#58a6ff'>Tracks</b><br>
+<span style='color:#3fb950'>🔭</span> Star Classification (SDSS)<br>
+<span style='color:#3fb950'>📈</span> Community Crime Regression<br>
+<span style='color:#3fb950'>💳</span> Credit Card Clustering (k=4)<br>
+<span style='color:#3fb950'>📊</span> EDA Explorer
 </div>
 """, unsafe_allow_html=True)
 
@@ -451,7 +516,7 @@ elif page == "🔭  Classification":
                 )
 
         st.markdown("")
-        predict_btn = st.button("🚀 Predict Star Type", use_container_width=True)
+        predict_btn = st.button("Predict Star Type", use_container_width=True)
 
         if predict_btn:
             model = cls_models[chosen_model_name]
@@ -647,7 +712,7 @@ elif page == "📈  Regression":
                 value=med_v, step=step_v, key=f"reg_{feat}"
             )
 
-        predict_r_btn = st.button("🚀 Predict Crime Rate", use_container_width=True)
+        predict_r_btn = st.button("Predict Crime Rate", use_container_width=True)
 
         if predict_r_btn:
             # build full feature vector (missing → median)
@@ -806,196 +871,376 @@ elif page == "📈  Regression":
 #  PAGE: CLUSTERING
 # ═══════════════════════════════════════════════════════════════
 elif page == "🔵  Clustering":
-    st.title("🔵 Interactive Clustering")
-    st.markdown("<p style='color:#8b949e'>Run unsupervised clustering on either dataset and explore the results interactively with PCA visualisation, silhouette scores, and elbow plots.</p>", unsafe_allow_html=True)
+    st.title("🔵 Clustering")
+    st.markdown("<p style='color:#8b949e'>Credit Card Customer Segmentation (notebook model) · Interactive Explorer on any dataset.</p>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # Sidebar-style controls inside main area
-    c_left, c_right = st.columns([1, 2])
+    tab_cc, tab_explore = st.tabs(["💳 Credit Card Segmentation", "🔬 Interactive Explorer"])
 
-    with c_left:
-        st.markdown("#### ⚙️ Configuration")
-        dataset_choice = st.selectbox("Dataset", ["Star Classification (SDSS)", "Community Crime"], key="clust_dataset")
-        algo_choice    = st.selectbox("Algorithm", ["K-Means", "DBSCAN", "Agglomerative"], key="clust_algo")
+    # ────────────────────────────────────────────────────────────
+    #  TAB 1 — CREDIT CARD SEGMENTATION (saved notebook model)
+    # ────────────────────────────────────────────────────────────
+    with tab_cc:
+        try:
+            clust_prep, clust_km, clust_centroids, clust_labels_df, clust_meta = load_cluster_artifacts()
+            cc_data = load_cc_data()
+        except FileNotFoundError as e:
+            st.error(f"Clustering artifacts not found: {e}. Run the last cell of clustering.ipynb first.")
+            st.stop()
 
-        if algo_choice == "K-Means":
-            k_val       = st.slider("Number of clusters (k)", 2, 15, 3, key="clust_k")
-            init_method = st.selectbox("Init method", ["k-means++", "random"], key="clust_init")
-            max_iter    = st.slider("Max iterations", 100, 500, 300, step=50, key="clust_maxiter")
+        RAW_FEATURES_CC = clust_meta["raw_features"]
+        ALL_FEATURES_CC = clust_meta["feature_names"]
+        K = clust_meta["k"]
+        CLUSTER_COLORS  = px.colors.qualitative.Plotly
+        CLUSTER_NAMES   = {0: "Cluster 0", 1: "Cluster 1", 2: "Cluster 2", 3: "Cluster 3"}
 
-        elif algo_choice == "DBSCAN":
-            eps_val    = st.slider("ε (epsilon) — neighbourhood radius", 0.1, 5.0, 0.5, step=0.05, key="clust_eps")
-            min_samp   = st.slider("min_samples", 2, 30, 5, key="clust_minsamp")
-            st.markdown("<div class='info-banner'>Points not assigned to any cluster are labelled <b>Noise (-1)</b>.</div>", unsafe_allow_html=True)
-
-        elif algo_choice == "Agglomerative":
-            agg_k      = st.slider("Number of clusters", 2, 15, 3, key="clust_agg_k")
-            linkage_m  = st.selectbox("Linkage", ["ward", "complete", "average", "single"], key="clust_link")
+        # ── Top metrics row ──────────────────────────────────
+        st.markdown("### 📊 Model Overview")
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("Algorithm",         "K-Means")
+        m2.metric("Clusters (k)",      str(K))
+        m3.metric("Customers",         f"{clust_meta['n_samples']:,}")
+        m4.metric("Silhouette ↑",      f"{clust_meta['metrics']['Silhouette']:.4f}")
+        m5.metric("Davies-Bouldin ↓",  f"{clust_meta['metrics']['Davies-Bouldin']:.4f}")
 
         st.markdown("---")
-        n_pca_comp = st.slider("PCA components for visualisation", 2, 3, 2, key="clust_pca")
-        sample_frac = st.slider("Data sample fraction (for speed)", 0.05, 1.0, 0.30, step=0.05, key="clust_frac")
-        run_btn = st.button("▶ Run Clustering", use_container_width=True)
 
-        st.markdown("---")
-        st.markdown("**Show elbow / silhouette scan**")
-        show_elbow = st.checkbox("Elbow curve (K-Means range 2–12)", value=False, key="clust_elbow")
+        # ── Tabs within the CC tab ───────────────────────────
+        st_cc1, st_cc2, st_cc3, st_cc4 = st.tabs(["📈 Cluster Profiles", "🗺️ PCA Scatter", "📋 Cluster Sizes", "🎯 Predict Cluster"])
 
-    with c_right:
-        if run_btn or show_elbow:
-            with st.spinner("Loading & preprocessing data…"):
-                if "Star" in dataset_choice:
-                    df_raw = load_cls_data()
-                    X_raw = df_raw.drop(columns=["class"], errors="ignore")
-                    y_true_labels = df_raw["class"].values if "class" in df_raw.columns else None
-                else:
-                    df_raw, tgt_r = load_reg_data()
-                    y_true_labels = None
-                    X_raw = df_raw.drop(columns=[tgt_r], errors="ignore")
+        # ── Cluster Profiles (centroid radar / bar) ──────────
+        with st_cc1:
+            st.markdown("### Cluster Feature Profiles (Scaled Centroids)")
+            st.markdown("<div class='info-banner'>Values are in the scaled (standardised) feature space. Positive = above average; Negative = below average.</div>", unsafe_allow_html=True)
 
-                # sample
-                X_raw = X_raw.sample(frac=sample_frac, random_state=42).reset_index(drop=True)
-                if y_true_labels is not None and "Star" in dataset_choice:
-                    y_true_labels = load_cls_data()["class"].sample(frac=sample_frac, random_state=42).values
+            # Select features to display
+            feat_show = st.multiselect(
+                "Features to compare",
+                ALL_FEATURES_CC,
+                default=["BALANCE", "PURCHASES", "CASH_ADVANCE", "CREDIT_LIMIT",
+                         "PAYMENTS", "PURCHASES_FREQUENCY", "CASH_ADVANCE_FREQUENCY"],
+                key="cc_profile_feats"
+            )
+            if feat_show:
+                prof_df = clust_centroids[feat_show].copy()
+                prof_df.index = [f"Cluster {i}" for i in prof_df.index]
+                prof_melt = prof_df.reset_index().melt(id_vars="index", var_name="Feature", value_name="Scaled Value")
+                prof_melt.rename(columns={"index": "Cluster"}, inplace=True)
 
-                # drop non-numeric, fill NaN
-                X_num = X_raw.select_dtypes(include=[np.number]).fillna(X_raw.select_dtypes(include=[np.number]).median())
-
-                # scale
-                sc = SkScaler()
-                X_scaled = sc.fit_transform(X_num)
-
-                # PCA for visualisation
-                pca = PCA(n_components=n_pca_comp, random_state=42)
-                X_pca = pca.fit_transform(X_scaled)
-
-            if show_elbow and algo_choice == "K-Means":
-                with st.spinner("Computing elbow curve…"):
-                    inertias, sil_scores = [], []
-                    k_range = range(2, 13)
-                    for k in k_range:
-                        km = KMeans(n_clusters=k, init="k-means++", n_init=5, random_state=42)
-                        labels_e = km.fit_predict(X_scaled)
-                        inertias.append(km.inertia_)
-                        sil_scores.append(silhouette_score(X_scaled, labels_e, sample_size=min(1000, len(X_scaled))))
-
-                    fig_el = make_subplots(rows=1, cols=2,
-                                           subplot_titles=["Inertia (Elbow)", "Silhouette Score"])
-                    fig_el.add_trace(go.Scatter(x=list(k_range), y=inertias, mode="lines+markers",
-                                                 marker_color="#388bfd", name="Inertia"), row=1, col=1)
-                    fig_el.add_trace(go.Scatter(x=list(k_range), y=sil_scores, mode="lines+markers",
-                                                 marker_color="#3fb950", name="Silhouette"), row=1, col=2)
-                    fig_el.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                          font_color="#e6edf3", height=340,
-                                          xaxis=dict(gridcolor="#21262d", title="k"),
-                                          xaxis2=dict(gridcolor="#21262d", title="k"),
-                                          yaxis=dict(gridcolor="#21262d"),
-                                          yaxis2=dict(gridcolor="#21262d"),
-                                          margin=dict(t=40, b=20), showlegend=False)
-                    st.plotly_chart(fig_el, use_container_width=True, key="clust_elbow_fig")
-
-            if run_btn:
-                with st.spinner(f"Running {algo_choice}…"):
-                    if algo_choice == "K-Means":
-                        model_c = KMeans(n_clusters=k_val, init=init_method, max_iter=max_iter,
-                                         n_init=10, random_state=42)
-                        labels_c = model_c.fit_predict(X_scaled)
-
-                    elif algo_choice == "DBSCAN":
-                        model_c = DBSCAN(eps=eps_val, min_samples=min_samp, n_jobs=-1)
-                        labels_c = model_c.fit_predict(X_scaled)
-
-                    elif algo_choice == "Agglomerative":
-                        model_c = AgglomerativeClustering(n_clusters=agg_k, linkage=linkage_m)
-                        labels_c = model_c.fit_predict(X_scaled)
-
-                n_clusters_found = len(set(labels_c)) - (1 if -1 in labels_c else 0)
-                n_noise          = (labels_c == -1).sum()
-
-                # metrics
-                try:
-                    sil  = silhouette_score(X_scaled, labels_c, sample_size=min(2000, len(X_scaled))) if n_clusters_found > 1 else float("nan")
-                    db   = davies_bouldin_score(X_scaled, labels_c) if n_clusters_found > 1 else float("nan")
-                except Exception:
-                    sil, db = float("nan"), float("nan")
-
-                km1, km2, km3, km4 = st.columns(4)
-                km1.metric("Clusters Found",  str(n_clusters_found))
-                km2.metric("Noise Points",    str(n_noise))
-                km3.metric("Silhouette ↑",    f"{sil:.4f}" if not np.isnan(sil) else "N/A",
-                            help="Range [−1, 1]; higher is better")
-                km4.metric("Davies-Bouldin ↓", f"{db:.4f}" if not np.isnan(db) else "N/A",
-                            help="Lower is better")
-
-                st.markdown("---")
-                # ── PCA scatter ──────────────────────────────
-                labels_str = [str(l) for l in labels_c]
-                if n_pca_comp == 2:
-                    scatter_df = pd.DataFrame({
-                        "PC1": X_pca[:, 0], "PC2": X_pca[:, 1],
-                        "Cluster": labels_str,
-                    })
-                    if y_true_labels is not None and "Star" in dataset_choice:
-                        scatter_df["True Class"] = y_true_labels
-                        hover = ["True Class"]
-                    else:
-                        hover = None
-
-                    fig_sc = px.scatter(
-                        scatter_df, x="PC1", y="PC2", color="Cluster",
-                        hover_data=hover,
-                        title=f"{algo_choice} Clusters (PCA 2D) — {n_clusters_found} clusters",
-                        color_discrete_sequence=px.colors.qualitative.Plotly,
-                    )
-                else:
-                    scatter_df = pd.DataFrame({
-                        "PC1": X_pca[:, 0], "PC2": X_pca[:, 1], "PC3": X_pca[:, 2],
-                        "Cluster": labels_str,
-                    })
-                    fig_sc = px.scatter_3d(
-                        scatter_df, x="PC1", y="PC2", z="PC3", color="Cluster",
-                        title=f"{algo_choice} Clusters (PCA 3D) — {n_clusters_found} clusters",
-                        color_discrete_sequence=px.colors.qualitative.Plotly,
-                        opacity=0.7,
-                    )
-
-                fig_sc.update_layout(
+                fig_prof = px.bar(
+                    prof_melt, x="Feature", y="Scaled Value", color="Cluster",
+                    barmode="group",
+                    color_discrete_sequence=CLUSTER_COLORS,
+                    title="Centroid Profiles — Scaled Feature Values by Cluster",
+                )
+                fig_prof.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#e6edf3", height=520,
+                    font_color="#e6edf3", height=480,
+                    xaxis=dict(gridcolor="#21262d", tickangle=-30),
+                    yaxis=dict(gridcolor="#21262d", title="Scaled value (std devs)"),
                     legend_title_text="Cluster",
-                    margin=dict(t=50, b=20),
+                    margin=dict(t=50, b=60),
                 )
-                st.plotly_chart(fig_sc, use_container_width=True, key="clust_scatter")
+                st.plotly_chart(fig_prof, use_container_width=True, key="cc_profile_bar")
 
-                # ── Cluster size bar ─────────────────────────
-                st.markdown("#### Cluster Size Distribution")
-                clust_sizes = pd.Series(labels_c).value_counts().sort_index().reset_index()
-                clust_sizes.columns = ["Cluster", "Count"]
-                clust_sizes["Cluster"] = clust_sizes["Cluster"].astype(str)
-                fig_sz = px.bar(clust_sizes, x="Cluster", y="Count",
-                                color="Cluster",
-                                color_discrete_sequence=px.colors.qualitative.Plotly,
-                                text="Count")
-                fig_sz.update_traces(textposition="outside")
-                fig_sz.update_layout(
+                st.markdown("**Centroid table (scaled)**")
+                st.dataframe(clust_centroids[feat_show].round(4), use_container_width=True)
+
+        # ── PCA Scatter ──────────────────────────────────────
+        with st_cc2:
+            st.markdown("### PCA 2D Projection")
+            pca_n = st.radio("Dimensions", [2, 3], horizontal=True, key="cc_pca_n")
+            sample_n_cc = st.slider("Sample size for plot", 500, len(cc_data), min(3000, len(cc_data)), step=500, key="cc_pca_sample")
+
+            with st.spinner("Computing PCA…"):
+                # use the fitted preprocessor to transform the raw data
+                X_cc_scaled = clust_prep.transform(cc_data[RAW_FEATURES_CC])
+                pca_viz = PCA(n_components=pca_n, random_state=42)
+                X_pca_cc = pca_viz.fit_transform(X_cc_scaled)
+
+            labels_all = clust_labels_df.iloc[:, 0].values
+            idx_sample = np.random.default_rng(42).choice(len(labels_all), size=min(sample_n_cc, len(labels_all)), replace=False)
+
+            if pca_n == 2:
+                sc_df = pd.DataFrame({
+                    "PC1": X_pca_cc[idx_sample, 0],
+                    "PC2": X_pca_cc[idx_sample, 1],
+                    "Cluster": [f"Cluster {l}" for l in labels_all[idx_sample]],
+                })
+                fig_pca = px.scatter(
+                    sc_df, x="PC1", y="PC2", color="Cluster",
+                    color_discrete_sequence=CLUSTER_COLORS,
+                    title=f"K-Means k={K} — PCA 2D (sample n={len(idx_sample):,})",
+                    opacity=0.65,
+                )
+            else:
+                sc_df = pd.DataFrame({
+                    "PC1": X_pca_cc[idx_sample, 0],
+                    "PC2": X_pca_cc[idx_sample, 1],
+                    "PC3": X_pca_cc[idx_sample, 2],
+                    "Cluster": [f"Cluster {l}" for l in labels_all[idx_sample]],
+                })
+                fig_pca = px.scatter_3d(
+                    sc_df, x="PC1", y="PC2", z="PC3", color="Cluster",
+                    color_discrete_sequence=CLUSTER_COLORS,
+                    title=f"K-Means k={K} — PCA 3D (sample n={len(idx_sample):,})",
+                    opacity=0.65,
+                )
+
+            evr = pca_viz.explained_variance_ratio_ * 100
+            fig_pca.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#e6edf3", height=540,
+                legend_title_text="Cluster",
+                margin=dict(t=50, b=20),
+            )
+            st.plotly_chart(fig_pca, use_container_width=True, key="cc_pca_scatter")
+            st.markdown(f"**PCA Explained Variance:** {' + '.join([f'PC{i+1}: {v:.1f}%' for i, v in enumerate(evr)])} = **{sum(evr):.1f}%** total")
+
+        # ── Cluster Sizes ────────────────────────────────────
+        with st_cc3:
+            st.markdown("### Cluster Size Distribution")
+            sizes = clust_meta["cluster_sizes"]
+            size_df = pd.DataFrame({
+                "Cluster": [f"Cluster {k}" for k in sizes],
+                "Customers": list(sizes.values()),
+            })
+            size_df["Percent"] = (size_df["Customers"] / size_df["Customers"].sum() * 100).round(1)
+
+            fig_sz2 = px.bar(
+                size_df, x="Cluster", y="Customers",
+                color="Cluster",
+                color_discrete_sequence=CLUSTER_COLORS,
+                text=size_df["Percent"].apply(lambda x: f"{x}%"),
+                title="Number of Customers per Cluster",
+            )
+            fig_sz2.update_traces(textposition="outside")
+            fig_sz2.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                font_color="#e6edf3", height=380,
+                showlegend=False,
+                xaxis=dict(gridcolor="#21262d"),
+                yaxis=dict(gridcolor="#21262d"),
+                margin=dict(t=50, b=20),
+            )
+            st.plotly_chart(fig_sz2, use_container_width=True, key="cc_size_bar")
+            st.dataframe(size_df.set_index("Cluster"), use_container_width=True)
+
+        # ── Predict Cluster for New Customer ─────────────────
+        with st_cc4:
+            st.markdown("### 🎯 Predict Cluster for a New Customer")
+            st.markdown("<div class='info-banner'>Enter raw credit card usage values. The notebook's fitted preprocessor (engineer → impute → scale) will be applied automatically before prediction.</div>", unsafe_allow_html=True)
+
+            med_vals = cc_data[RAW_FEATURES_CC].median()
+            input_cc = {}
+            cols_cc = st.columns(3)
+            for idx, feat in enumerate(RAW_FEATURES_CC):
+                col_w = cols_cc[idx % 3]
+                min_v = float(cc_data[feat].min())
+                max_v = float(cc_data[feat].max())
+                med_v = float(med_vals[feat])
+                step_v = round((max_v - min_v) / 100, 4) if max_v != min_v else 0.01
+                input_cc[feat] = col_w.number_input(
+                    feat, min_value=min_v, max_value=max_v,
+                    value=med_v, step=step_v, key=f"cc_inp_{feat}"
+                )
+
+            predict_cc_btn = st.button("🔍 Predict Customer Segment", use_container_width=True, key="cc_predict_btn")
+
+            if predict_cc_btn:
+                row_df = pd.DataFrame([input_cc])[RAW_FEATURES_CC]
+                X_in   = clust_prep.transform(row_df)
+                cluster_id = int(clust_km.predict(X_in)[0])
+
+                # distance to all centroids (in scaled space)
+                dists = np.linalg.norm(clust_km.cluster_centers_ - X_in, axis=1)
+                confidence = 1.0 - (dists[cluster_id] / dists.sum())
+
+                st.markdown(f"""
+<div class='pred-box'>
+  <div class='pred-label'>Predicted Customer Segment</div>
+  <div class='pred-value' style='color:{CLUSTER_COLORS[cluster_id]}'>Cluster {cluster_id}</div>
+  <div class='pred-sub'>Confidence score: {confidence:.1%} &nbsp;|&nbsp; Distance to centroid: {dists[cluster_id]:.4f}</div>
+</div>""", unsafe_allow_html=True)
+
+                st.markdown("#### Centroid Profile of Predicted Cluster")
+                cent_row = clust_centroids.loc[cluster_id]
+                top10 = cent_row.abs().sort_values(ascending=False).head(10).index.tolist()
+                cent_plot = cent_row[top10].reset_index()
+                cent_plot.columns = ["Feature", "Scaled Value"]
+                cent_plot["Direction"] = cent_plot["Scaled Value"].apply(lambda x: "Above Avg" if x >= 0 else "Below Avg")
+
+                fig_cent = px.bar(
+                    cent_plot, x="Feature", y="Scaled Value", color="Direction",
+                    color_discrete_map={"Above Avg": "#3fb950", "Below Avg": "#f78166"},
+                    title=f"Top 10 Distinguishing Features — Cluster {cluster_id}",
+                )
+                fig_cent.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#e6edf3", height=320,
-                    showlegend=False,
-                    xaxis=dict(gridcolor="#21262d"),
+                    font_color="#e6edf3", height=380,
+                    xaxis=dict(gridcolor="#21262d", tickangle=-25),
                     yaxis=dict(gridcolor="#21262d"),
-                    margin=dict(t=20, b=20),
+                    margin=dict(t=50, b=60),
                 )
-                st.plotly_chart(fig_sz, use_container_width=True, key="clust_size_bar")
+                st.plotly_chart(fig_cent, use_container_width=True, key="cc_cent_bar")
 
-                # PCA explained variance
-                exp_var = pca.explained_variance_ratio_ * 100
-                st.markdown(f"**PCA Explained Variance:** {' + '.join([f'PC{i+1}: {v:.1f}%' for i,v in enumerate(exp_var)])} = **{sum(exp_var):.1f}%** total")
+    # ────────────────────────────────────────────────────────────
+    #  TAB 2 — INTERACTIVE EXPLORER
+    # ────────────────────────────────────────────────────────────
+    with tab_explore:
+        st.markdown("### 🔬 Run clustering on any dataset interactively")
+        c_left, c_right = st.columns([1, 2])
 
-        else:
-            st.markdown("""
+        with c_left:
+            st.markdown("#### ⚙️ Configuration")
+            dataset_choice = st.selectbox("Dataset", ["Star Classification (SDSS)", "Community Crime"], key="clust_dataset")
+            algo_choice    = st.selectbox("Algorithm", ["K-Means", "DBSCAN", "Agglomerative"], key="clust_algo")
+
+            if algo_choice == "K-Means":
+                k_val       = st.slider("Number of clusters (k)", 2, 15, 3, key="clust_k")
+                init_method = st.selectbox("Init method", ["k-means++", "random"], key="clust_init")
+                max_iter    = st.slider("Max iterations", 100, 500, 300, step=50, key="clust_maxiter")
+            elif algo_choice == "DBSCAN":
+                eps_val  = st.slider("ε (epsilon)", 0.1, 5.0, 0.5, step=0.05, key="clust_eps")
+                min_samp = st.slider("min_samples", 2, 30, 5, key="clust_minsamp")
+                st.markdown("<div class='info-banner'>Noise points labelled <b>-1</b>.</div>", unsafe_allow_html=True)
+            elif algo_choice == "Agglomerative":
+                agg_k     = st.slider("Number of clusters", 2, 15, 3, key="clust_agg_k")
+                linkage_m = st.selectbox("Linkage", ["ward", "complete", "average", "single"], key="clust_link")
+
+            st.markdown("---")
+            n_pca_comp  = st.slider("PCA components for vis", 2, 3, 2, key="clust_pca")
+            sample_frac = st.slider("Data sample fraction", 0.05, 1.0, 0.30, step=0.05, key="clust_frac")
+            run_btn     = st.button("▶ Run Clustering", use_container_width=True, key="clust_run_btn")
+            st.markdown("---")
+            show_elbow  = st.checkbox("Elbow curve (K-Means 2–12)", value=False, key="clust_elbow")
+
+        with c_right:
+            if run_btn or show_elbow:
+                with st.spinner("Loading & preprocessing data…"):
+                    if "Star" in dataset_choice:
+                        df_raw_ex = load_cls_data()
+                        X_raw_ex  = df_raw_ex.drop(columns=["class"], errors="ignore")
+                        y_true_ex = df_raw_ex["class"].values if "class" in df_raw_ex.columns else None
+                    else:
+                        df_raw_ex, tgt_r_ex = load_reg_data()
+                        X_raw_ex  = df_raw_ex.drop(columns=[tgt_r_ex], errors="ignore")
+                        y_true_ex = None
+
+                    X_raw_ex = X_raw_ex.sample(frac=sample_frac, random_state=42).reset_index(drop=True)
+                    if y_true_ex is not None and "Star" in dataset_choice:
+                        y_true_ex = load_cls_data()["class"].sample(frac=sample_frac, random_state=42).values
+
+                    X_num_ex = X_raw_ex.select_dtypes(include=[np.number]).fillna(
+                        X_raw_ex.select_dtypes(include=[np.number]).median())
+                    sc_ex     = SkScaler()
+                    X_sc_ex   = sc_ex.fit_transform(X_num_ex)
+                    pca_ex    = PCA(n_components=n_pca_comp, random_state=42)
+                    X_pca_ex  = pca_ex.fit_transform(X_sc_ex)
+
+                if show_elbow and algo_choice == "K-Means":
+                    with st.spinner("Computing elbow curve…"):
+                        inertias_ex, sil_ex = [], []
+                        k_range_ex = range(2, 13)
+                        for k in k_range_ex:
+                            km_e = KMeans(n_clusters=k, init="k-means++", n_init=5, random_state=42)
+                            lb_e = km_e.fit_predict(X_sc_ex)
+                            inertias_ex.append(km_e.inertia_)
+                            sil_ex.append(silhouette_score(X_sc_ex, lb_e, sample_size=min(1000, len(X_sc_ex))))
+
+                        fig_el = make_subplots(rows=1, cols=2, subplot_titles=["Inertia (Elbow)", "Silhouette"])
+                        fig_el.add_trace(go.Scatter(x=list(k_range_ex), y=inertias_ex, mode="lines+markers",
+                                                     marker_color="#388bfd", name="Inertia"), row=1, col=1)
+                        fig_el.add_trace(go.Scatter(x=list(k_range_ex), y=sil_ex, mode="lines+markers",
+                                                     marker_color="#3fb950", name="Silhouette"), row=1, col=2)
+                        fig_el.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                                              font_color="#e6edf3", height=340,
+                                              xaxis=dict(gridcolor="#21262d", title="k"),
+                                              xaxis2=dict(gridcolor="#21262d", title="k"),
+                                              yaxis=dict(gridcolor="#21262d"),
+                                              yaxis2=dict(gridcolor="#21262d"),
+                                              margin=dict(t=40, b=20), showlegend=False)
+                        st.plotly_chart(fig_el, use_container_width=True, key="clust_elbow_fig")
+
+                if run_btn:
+                    with st.spinner(f"Running {algo_choice}…"):
+                        if algo_choice == "K-Means":
+                            model_c  = KMeans(n_clusters=k_val, init=init_method, max_iter=max_iter,
+                                              n_init=10, random_state=42)
+                            labels_c = model_c.fit_predict(X_sc_ex)
+                        elif algo_choice == "DBSCAN":
+                            model_c  = DBSCAN(eps=eps_val, min_samples=min_samp, n_jobs=-1)
+                            labels_c = model_c.fit_predict(X_sc_ex)
+                        elif algo_choice == "Agglomerative":
+                            model_c  = AgglomerativeClustering(n_clusters=agg_k, linkage=linkage_m)
+                            labels_c = model_c.fit_predict(X_sc_ex)
+
+                    n_found = len(set(labels_c)) - (1 if -1 in labels_c else 0)
+                    n_noise = (labels_c == -1).sum()
+                    try:
+                        sil = silhouette_score(X_sc_ex, labels_c,
+                                               sample_size=min(2000, len(X_sc_ex))) if n_found > 1 else float("nan")
+                        db  = davies_bouldin_score(X_sc_ex, labels_c) if n_found > 1 else float("nan")
+                    except Exception:
+                        sil, db = float("nan"), float("nan")
+
+                    em1, em2, em3, em4 = st.columns(4)
+                    em1.metric("Clusters Found",  str(n_found))
+                    em2.metric("Noise Points",    str(n_noise))
+                    em3.metric("Silhouette ↑",    f"{sil:.4f}" if not np.isnan(sil) else "N/A")
+                    em4.metric("Davies-Bouldin ↓", f"{db:.4f}" if not np.isnan(db) else "N/A")
+
+                    st.markdown("---")
+                    labels_str_ex = [str(l) for l in labels_c]
+                    if n_pca_comp == 2:
+                        sc_df_ex = pd.DataFrame({"PC1": X_pca_ex[:, 0], "PC2": X_pca_ex[:, 1], "Cluster": labels_str_ex})
+                        if y_true_ex is not None and "Star" in dataset_choice:
+                            sc_df_ex["True Class"] = y_true_ex
+                        fig_sc_ex = px.scatter(
+                            sc_df_ex, x="PC1", y="PC2", color="Cluster",
+                            hover_data=["True Class"] if "True Class" in sc_df_ex else None,
+                            title=f"{algo_choice} (PCA 2D) — {n_found} clusters",
+                            color_discrete_sequence=px.colors.qualitative.Plotly,
+                        )
+                    else:
+                        sc_df_ex = pd.DataFrame({"PC1": X_pca_ex[:, 0], "PC2": X_pca_ex[:, 1],
+                                                  "PC3": X_pca_ex[:, 2], "Cluster": labels_str_ex})
+                        fig_sc_ex = px.scatter_3d(
+                            sc_df_ex, x="PC1", y="PC2", z="PC3", color="Cluster",
+                            title=f"{algo_choice} (PCA 3D) — {n_found} clusters",
+                            color_discrete_sequence=px.colors.qualitative.Plotly, opacity=0.7,
+                        )
+
+                    fig_sc_ex.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                        font_color="#e6edf3", height=520, legend_title_text="Cluster",
+                        margin=dict(t=50, b=20),
+                    )
+                    st.plotly_chart(fig_sc_ex, use_container_width=True, key="clust_scatter_ex")
+
+                    st.markdown("#### Cluster Size Distribution")
+                    sz_ex = pd.Series(labels_c).value_counts().sort_index().reset_index()
+                    sz_ex.columns = ["Cluster", "Count"]
+                    sz_ex["Cluster"] = sz_ex["Cluster"].astype(str)
+                    fig_sz_ex = px.bar(sz_ex, x="Cluster", y="Count",
+                                       color="Cluster", text="Count",
+                                       color_discrete_sequence=px.colors.qualitative.Plotly)
+                    fig_sz_ex.update_traces(textposition="outside")
+                    fig_sz_ex.update_layout(
+                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                        font_color="#e6edf3", height=320, showlegend=False,
+                        xaxis=dict(gridcolor="#21262d"), yaxis=dict(gridcolor="#21262d"),
+                        margin=dict(t=20, b=20),
+                    )
+                    st.plotly_chart(fig_sz_ex, use_container_width=True, key="clust_size_ex")
+                    evr_ex = pca_ex.explained_variance_ratio_ * 100
+                    st.markdown(f"**PCA Explained Variance:** {' + '.join([f'PC{i+1}: {v:.1f}%' for i,v in enumerate(evr_ex)])} = **{sum(evr_ex):.1f}%** total")
+
+            else:
+                st.markdown("""
 <div style='background:#161b22;border:1px dashed #30363d;border-radius:14px;
             padding:60px 40px;text-align:center;color:#8b949e'>
-  <div style='font-size:3rem'>🔵</div>
+  <div style='font-size:3rem'>🔬</div>
   <h3 style='color:#58a6ff'>Configure & Run Clustering</h3>
   <p>Choose a dataset, algorithm, and parameters on the left,<br>then click <b>▶ Run Clustering</b>.</p>
 </div>""", unsafe_allow_html=True)
