@@ -596,15 +596,15 @@ elif page == "📈  Regression":
     df_reg, target_reg = load_reg_data()
 
     REG_METRICS = {
-        "Linear Regression":     {"R²": 0.6231, "RMSE": 0.1094, "MAE": 0.0795},
-        "Ridge Regression":      {"R²": 0.6231, "RMSE": 0.1094, "MAE": 0.0795},
-        "Lasso Regression":      {"R²": 0.6218, "RMSE": 0.1096, "MAE": 0.0795},
-        "ElasticNet Regression": {"R²": 0.6108, "RMSE": 0.1108, "MAE": 0.0805},
-        "Decision Tree":         {"R²": 0.5402, "RMSE": 0.1206, "MAE": 0.0839},
-        "Random Forest":         {"R²": 0.7022, "RMSE": 0.0973, "MAE": 0.0678},
-        "Gradient Boosting":     {"R²": 0.7143, "RMSE": 0.0954, "MAE": 0.0669},
-        "SVR":                   {"R²": 0.6590, "RMSE": 0.1042, "MAE": 0.0718},
-        "KNN":                   {"R²": 0.5871, "RMSE": 0.1144, "MAE": 0.0797},
+        "Linear Regression":     {"R²": 0.6830, "RMSE": 0.1307, "MAE": 0.0949},
+        "Ridge Regression":      {"R²": 0.6820, "RMSE": 0.1309, "MAE": 0.0950},
+        "Lasso Regression":      {"R²": 0.6793, "RMSE": 0.1314, "MAE": 0.0939},
+        "ElasticNet Regression": {"R²": 0.6811, "RMSE": 0.1310, "MAE": 0.0945},
+        "Decision Tree":         {"R²": 0.3388, "RMSE": 0.1887, "MAE": 0.1289},
+        "Random Forest":         {"R²": 0.6672, "RMSE": 0.1339, "MAE": 0.0957},
+        "Gradient Boosting":     {"R²": 0.6830, "RMSE": 0.1307, "MAE": 0.0902},
+        "SVR":                   {"R²": 0.6261, "RMSE": 0.1419, "MAE": 0.1034},
+        "KNN":                   {"R²": 0.5983, "RMSE": 0.1471, "MAE": 0.0994},
     }
 
     # Models in the regression track that need scaled data
