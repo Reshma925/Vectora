@@ -1,0 +1,11 @@
+Model,R²,RMSE,MAE
+Linear Regression,0.683,0.1307,0.0949
+Ridge Regression,0.682,0.1309,0.095
+Lasso Regression,0.6793,0.1314,0.0939
+ElasticNet Regression,0.6811,0.131,0.0945
+Polynomial Regression (PCA=10),0.6477,0.1377,0.0964
+Decision Tree,0.3388,0.1887,0.1289
+Random Forest,0.6672,0.1339,0.0957
+Gradient Boosting,0.683,0.1307,0.0902
+SVR,0.6261,0.1419,0.1034
+KNN,0.5983,0.1471,0.0994

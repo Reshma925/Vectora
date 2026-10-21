@@ -5,7 +5,6 @@ Covers:
   • Classification  – Star Type (Galaxy / QSO / Star)
   • Regression      – Community Crime Rate
   • Clustering      – K-Means / DBSCAN / Agglomerative (interactive)
-  • EDA Explorer    – Dataset exploration for both tracks
 """
 
 import os, warnings
@@ -31,7 +30,7 @@ from sklearn.preprocessing import StandardScaler as SkScaler
 # ─── page config ──────────────────────────────────────────────
 st.set_page_config(
     page_title="Vectora · ML Dashboard",
-    page_icon="🌌",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -39,88 +38,38 @@ st.set_page_config(
 # ─── custom CSS ───────────────────────────────────────────────
 st.markdown("""
 <style>
-  /* Global dark background */
-  .stApp { background-color: #0d1117; color: #e6edf3; }
-
-  /* Sidebar */
-  [data-testid="stSidebar"] { background: linear-gradient(180deg, #161b22 0%, #0d1117 100%); border-right: 1px solid #30363d; }
-  [data-testid="stSidebar"] .stMarkdown h1,
-  [data-testid="stSidebar"] .stMarkdown h2,
-  [data-testid="stSidebar"] .stMarkdown h3 { color: #58a6ff; }
-
-  /* Metric cards */
-  [data-testid="metric-container"] {
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 12px;
-    padding: 12px 16px;
-  }
-  [data-testid="metric-container"] label { color: #8b949e !important; font-size: 0.8rem; }
-  [data-testid="metric-container"] [data-testid="stMetricValue"] { color: #58a6ff; font-size: 1.5rem; font-weight: 700; }
-
-  /* Headings */
-  h1 { color: #58a6ff !important; }
-  h2 { color: #79c0ff !important; }
-  h3 { color: #a5d6ff !important; }
-
-  /* Buttons */
-  .stButton > button {
-    background: linear-gradient(135deg, #238636, #2ea043);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    padding: 0.5rem 1.5rem;
-    transition: opacity 0.2s;
-  }
-  .stButton > button:hover { opacity: 0.85; }
-
-  /* Tabs */
-  .stTabs [data-baseweb="tab-list"] { background: #161b22; border-radius: 10px; }
-  .stTabs [data-baseweb="tab"] { color: #8b949e; font-weight: 600; }
-  .stTabs [aria-selected="true"] { color: #58a6ff !important; border-bottom: 2px solid #58a6ff !important; }
-
-  /* DataFrames */
-  .stDataFrame { border: 1px solid #30363d; border-radius: 8px; }
-
-  /* Selectboxes / sliders */
-  .stSelectbox label, .stSlider label, .stNumberInput label { color: #8b949e; }
-
-  /* Prediction result box */
-  .pred-box {
-    background: linear-gradient(135deg, #1f2d3d 0%, #162032 100%);
-    border: 1px solid #388bfd;
-    border-radius: 14px;
-    padding: 20px 24px;
-    margin: 12px 0;
-    text-align: center;
-  }
-  .pred-label { font-size: 1rem; color: #8b949e; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
-  .pred-value { font-size: 2.4rem; font-weight: 800; color: #58a6ff; letter-spacing: 0.02em; }
-  .pred-sub   { font-size: 0.95rem; color: #79c0ff; margin-top: 4px; }
-
-  /* Info banners */
-  .info-banner {
-    background: #162032;
-    border-left: 4px solid #388bfd;
-    border-radius: 0 8px 8px 0;
-    padding: 10px 16px;
-    margin: 8px 0;
-    font-size: 0.88rem;
-    color: #a5d6ff;
-  }
-
-  /* Section divider */
-  hr { border-color: #30363d; }
-
-  /* Scrollable feature table */
-  .scroll-box { max-height: 340px; overflow-y: auto; }
-
-  /* Radio group */
-  .stRadio > div { flex-direction: row; gap: 16px; }
-
-  /* Progress bar */
-  .stProgress > div > div { background: linear-gradient(90deg, #238636, #58a6ff); }
+  :root { --espresso:#17130F; --panel:#211B15; --panel-raised:#2B2118; --border:#493B2D; --text:#F4EEE4; --muted:#B7A895; --gold:#D6AD55; --gold-soft:#E6C879; }
+  .stApp { background:var(--espresso); color:var(--text); }
+  [data-testid="stHeader"] { background:rgba(23,19,15,.96); }
+  [data-testid="stSidebar"] { background:linear-gradient(180deg,#211B15 0%,#17130F 100%); border-right:1px solid var(--border); }
+  [data-testid="stSidebar"] .stMarkdown h1,[data-testid="stSidebar"] .stMarkdown h2,[data-testid="stSidebar"] .stMarkdown h3 { color:var(--gold); }
+  h1,h2,h3 { color:var(--gold-soft) !important; letter-spacing:-.02em; }
+  h1 { font-weight:750 !important; }
+  p,li,label,[data-testid="stMarkdownContainer"] { color:inherit; }
+  [data-testid="metric-container"] { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:0 3px 12px rgba(0,0,0,.12); }
+  [data-testid="metric-container"] label { color:var(--muted) !important; font-size:.8rem; }
+  [data-testid="metric-container"] [data-testid="stMetricValue"] { color:var(--gold) !important; font-size:1.55rem; font-weight:700; }
+  .stButton > button { background:linear-gradient(135deg,#8C6A32,#A9843A); color:#FFF9EE; border:1px solid #B78A3F; border-radius:8px; font-weight:650; padding:.52rem 1.2rem; transition:all .15s ease; }
+  .stButton > button:hover { background:#B78A3F; border-color:#E6C879; color:#17130F; }
+  .stButton > button:focus { box-shadow:0 0 0 .15rem rgba(214,173,85,.3); }
+  .stTabs [data-baseweb="tab-list"] { background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:4px; gap:4px; }
+  .stTabs [data-baseweb="tab"] { color:var(--muted); font-weight:600; border-radius:6px; }
+  .stTabs [aria-selected="true"] { color:var(--gold-soft) !important; border-bottom:2px solid var(--gold) !important; background:#30251A; }
+  .stDataFrame,[data-testid="stTable"] { border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+  .stSelectbox label,.stSlider label,.stNumberInput label,.stTextInput label { color:var(--muted) !important; }
+  [data-baseweb="select"] > div,[data-baseweb="input"] > div,[data-testid="stNumberInput"] input { background:var(--panel) !important; border-color:var(--border) !important; border-radius:7px !important; }
+  .pred-box { background:linear-gradient(135deg,#30251A 0%,#211B15 100%); border:1px solid var(--gold); border-radius:12px; padding:22px 24px; margin:12px 0; text-align:center; }
+  .pred-label { font-size:.82rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px; }
+  .pred-value { font-size:2.2rem; font-weight:750; color:var(--gold-soft); letter-spacing:.01em; }
+  .pred-sub { font-size:.92rem; color:var(--muted); margin-top:4px; }
+  .info-banner { background:#2B2118; border:1px solid var(--border); border-left:4px solid var(--gold); border-radius:0 8px 8px 0; padding:12px 16px; margin:8px 0; font-size:.9rem; color:#E6D8C3; }
+  hr { border-color:var(--border); }
+  .scroll-box { max-height:340px; overflow-y:auto; }
+  .stRadio > div { flex-direction:row; gap:16px; }
+  .stProgress > div > div { background:linear-gradient(90deg,#8C6A32,#D6AD55); }
+  [data-testid="stExpander"] { border:1px solid var(--border); border-radius:9px; background:var(--panel); }
+  [data-testid="stAlert"] { border-radius:8px; }
+  a { color:var(--gold-soft) !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -180,10 +129,10 @@ def load_reg_artifacts():
 @st.cache_resource
 def load_cluster_artifacts():
     import json, sys
-    # Make clustering_preprocessing importable when unpickling the preprocessor pipeline
-    app_dir = os.path.join(CLUST_DIR, "app")
-    if app_dir not in sys.path:
-        sys.path.insert(0, app_dir)
+    # clustering_preprocessing.py lives at project root; ensure it's importable
+    # so joblib can unpickle the FunctionTransformer inside the preprocessor pipeline.
+    if BASE not in sys.path:
+        sys.path.insert(0, BASE)
     preprocessor = joblib.load(os.path.join(CLUST_MODELS, "cluster_preprocessor.pkl"))
     kmeans       = joblib.load(os.path.join(CLUST_MODELS, "kmeans_k4.pkl"))
     centroids    = pd.read_csv(os.path.join(CLUST_MODELS, "kmeans_k4_centroids.csv"), index_col=0)
@@ -255,8 +204,8 @@ def load_cls_metrics():
     return metrics[["Model", "Accuracy", "Weighted F1", "ROC-AUC"]]
 
 CLS_CLASSES = ["GALAXY", "QSO", "STAR"]
-CLASS_COLORS = {"GALAXY": "#388bfd", "QSO": "#f78166", "STAR": "#3fb950"}
-CLASS_ICONS  = {"GALAXY": "🌌", "QSO": "⚡", "STAR": "⭐"}
+CLASS_COLORS = {"GALAXY": "#B78A3F", "QSO": "#C77D52", "STAR": "#C6A04A"}
+CLASS_ICONS  = {"GALAXY": "", "QSO": "", "STAR": "⭐"}
 CLASS_DESC   = {
     "GALAXY": "A gravitationally bound system of stars, gas, dust, and dark matter.",
     "QSO":    "Quasi-Stellar Object — an extremely luminous active galactic nucleus powered by a supermassive black hole.",
@@ -289,8 +238,8 @@ FEATURE_TOOLTIPS = {
 #  SIDEBAR NAVIGATION
 # ─────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 🌌 Vectora")
-    st.markdown("<p style='color:#8b949e;font-size:0.82rem;'>Unified ML Dashboard</p>", unsafe_allow_html=True)
+    st.markdown("##  Vectora")
+    st.markdown("<p style='color:#B7A895;font-size:0.82rem;'>Unified ML Dashboard</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     # ── nav bar buttons ──────────────────────────────────
@@ -299,9 +248,9 @@ with st.sidebar:
 div[data-testid="stSidebar"] button {
     width: 100% !important;
     text-align: left !important;
-    background: #161b22 !important;
-    color: #e6edf3 !important;
-    border: 1px solid #30363d !important;
+    background: #211B15 !important;
+    color: #F4EEE4 !important;
+    border: 1px solid #493B2D !important;
     border-radius: 8px !important;
     padding: 10px 14px !important;
     margin-bottom: 6px !important;
@@ -310,28 +259,27 @@ div[data-testid="stSidebar"] button {
     transition: background 0.15s, border-color 0.15s !important;
 }
 div[data-testid="stSidebar"] button:hover {
-    background: #21262d !important;
-    border-color: #58a6ff !important;
-    color: #58a6ff !important;
+    background: #30261B !important;
+    border-color: #D6AD55 !important;
+    color: #E6C879 !important;
 }
 div[data-testid="stSidebar"] button[kind="primary"] {
-    background: linear-gradient(135deg,#1a3a5c,#1f4a7a) !important;
-    border-color: #58a6ff !important;
-    color: #58a6ff !important;
+    background: linear-gradient(135deg,#4A3824,#614A2C) !important;
+    border-color: #D6AD55 !important;
+    color: #E6C879 !important;
     font-weight: 700 !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
     if "page" not in st.session_state:
-        st.session_state["page"] = "🏠  Home"
+        st.session_state["page"] = "Home"
 
     nav_items = [
-        ("🏠  Home",           "🏠  Home"),
-        ("🔭  Classification", "🔭  Classification"),
-        ("📈  Regression",     "📈  Regression"),
-        ("🔵  Clustering",     "🔵  Clustering"),
-        ("📊  EDA Explorer",   "📊  EDA Explorer"),
+        ("Home",           "Home"),
+        ("Classification", "Classification"),
+        ("Regression",     "Regression"),
+        ("Clustering",     "Clustering"),
     ]
     for label, key in nav_items:
         kind = "primary" if st.session_state["page"] == key else "secondary"
@@ -343,12 +291,11 @@ div[data-testid="stSidebar"] button[kind="primary"] {
 
     st.markdown("---")
     st.markdown("""
-<div style='font-size:0.75rem;color:#8b949e;line-height:1.8'>
-<b style='color:#58a6ff'>Tracks</b><br>
-<span style='color:#3fb950'>🔭</span> Star Classification (SDSS)<br>
-<span style='color:#3fb950'>📈</span> Community Crime Regression<br>
-<span style='color:#3fb950'>💳</span> Credit Card Clustering (k=4)<br>
-<span style='color:#3fb950'>📊</span> EDA Explorer
+<div style='font-size:0.75rem;color:#B7A895;line-height:1.8'>
+<b style='color:#D6AD55'>Tracks</b><br>
+<span style='color:#C6A04A'></span> Star Classification (SDSS)<br>
+<span style='color:#C6A04A'></span> Community Crime Regression<br>
+<span style='color:#C6A04A'></span> Credit Card Clustering (k=4)<br>
 </div>
 """, unsafe_allow_html=True)
 
@@ -356,9 +303,9 @@ div[data-testid="stSidebar"] button[kind="primary"] {
 # ═══════════════════════════════════════════════════════════════
 #  PAGE: HOME
 # ═══════════════════════════════════════════════════════════════
-if page == "🏠  Home":
-    st.title("🌌 Vectora — ML Dashboard")
-    st.markdown("<p style='color:#8b949e;font-size:1.05rem;'>An end-to-end machine learning platform covering Classification, Regression, and Clustering.</p>", unsafe_allow_html=True)
+if page == "Home":
+    st.title(" Vectora — ML Dashboard")
+    st.markdown("<p style='color:#B7A895;font-size:1.05rem;'>An end-to-end machine learning platform covering Classification, Regression, and Clustering.</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     col1, col2, col3 = st.columns(3)
@@ -370,41 +317,41 @@ if page == "🏠  Home":
         cls_accuracy_label = "Notebook metrics unavailable"
     with col1:
         st.markdown(f"""
-<div style='background:#161b22;border:1px solid #30363d;border-radius:14px;padding:20px;text-align:center'>
-  <div style='font-size:2.5rem'>🔭</div>
-  <h3 style='color:#58a6ff'>Classification</h3>
-  <p style='color:#8b949e;font-size:0.88rem'>Star-type prediction using SDSS photometric data.<br>10 models · 3 classes</p>
-  <hr style='border-color:#30363d'>
-  <p style='color:#3fb950;font-size:1.05rem;font-weight:700'>{cls_accuracy_label}</p>
+<div style='background:#211B15;border:1px solid #493B2D;border-radius:14px;padding:20px;text-align:center'>
+  <div style='font-size:2.5rem'></div>
+  <h3 style='color:#D6AD55'>Classification</h3>
+  <p style='color:#B7A895;font-size:0.88rem'>Star-type prediction using SDSS photometric data.<br>10 models · 3 classes</p>
+  <hr style='border-color:#493B2D'>
+  <p style='color:#C6A04A;font-size:1.05rem;font-weight:700'>{cls_accuracy_label}</p>
 </div>""", unsafe_allow_html=True)
 
     with col2:
         st.markdown("""
-<div style='background:#161b22;border:1px solid #30363d;border-radius:14px;padding:20px;text-align:center'>
-  <div style='font-size:2.5rem'>📈</div>
-  <h3 style='color:#58a6ff'>Regression</h3>
-  <p style='color:#8b949e;font-size:0.88rem'>Community crime-rate prediction from socioeconomic features.<br>9 models · continuous target</p>
-  <hr style='border-color:#30363d'>
-  <p style='color:#3fb950;font-size:1.2rem;font-weight:700'>R² up to 0.74</p>
+<div style='background:#211B15;border:1px solid #493B2D;border-radius:14px;padding:20px;text-align:center'>
+  <div style='font-size:2.5rem'></div>
+  <h3 style='color:#D6AD55'>Regression</h3>
+  <p style='color:#B7A895;font-size:0.88rem'>Community crime-rate prediction from socioeconomic features.<br>11 models · continuous target</p>
+  <hr style='border-color:#493B2D'>
+  <p style='color:#C6A04A;font-size:1.2rem;font-weight:700'>Best R²: 0.6895</p>
 </div>""", unsafe_allow_html=True)
 
     with col3:
         st.markdown("""
-<div style='background:#161b22;border:1px solid #30363d;border-radius:14px;padding:20px;text-align:center'>
-  <div style='font-size:2.5rem'>🔵</div>
-  <h3 style='color:#58a6ff'>Clustering</h3>
-  <p style='color:#8b949e;font-size:0.88rem'>Exploratory unsupervised clustering with interactive PCA visualisation.<br>K-Means · DBSCAN · Agglomerative</p>
-  <hr style='border-color:#30363d'>
-  <p style='color:#3fb950;font-size:1.2rem;font-weight:700'>Interactive</p>
+<div style='background:#211B15;border:1px solid #493B2D;border-radius:14px;padding:20px;text-align:center'>
+  <div style='font-size:2.5rem'></div>
+  <h3 style='color:#D6AD55'>Clustering</h3>
+  <p style='color:#B7A895;font-size:0.88rem'>Exploratory unsupervised clustering with interactive PCA visualisation.<br>K-Means · DBSCAN · Agglomerative</p>
+  <hr style='border-color:#493B2D'>
+  <p style='color:#C6A04A;font-size:1.2rem;font-weight:700'>Interactive</p>
 </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown("### 📦 Datasets at a Glance")
-    d1, d2 = st.columns(2)
+    st.markdown("###  Datasets at a Glance")
+    d1, d2, d3 = st.columns(3)
     with d1:
         try:
             df_cls = load_cls_data()
-            st.markdown("**🔭 Star Classification (SDSS)**")
+            st.markdown("Star Classification (SDSS)")
             mc1, mc2, mc3 = st.columns(3)
             mc1.metric("Rows", f"{len(df_cls):,}")
             mc2.metric("Features", f"{df_cls.shape[1]-1}")
@@ -418,7 +365,7 @@ if page == "🏠  Home":
             )
             fig.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#e6edf3", showlegend=True,
+                font_color="#F4EEE4", showlegend=True,
                 margin=dict(t=10, b=10, l=10, r=10),
                 height=260,
             )
@@ -429,52 +376,101 @@ if page == "🏠  Home":
     with d2:
         try:
             df_reg, target_reg = load_reg_data()
-            st.markdown(f"**📈 Communities & Crime**")
+            st.markdown(f"Communities & Crime")
             mr1, mr2, mr3 = st.columns(3)
             mr1.metric("Rows", f"{len(df_reg):,}")
             mr2.metric("Features", f"{df_reg.shape[1]-1}")
             mr3.metric("Target", target_reg[:15])
             fig2 = px.histogram(
                 df_reg, x=target_reg, nbins=40,
-                color_discrete_sequence=["#388bfd"],
+                color_discrete_sequence=["#B78A3F"],
                 labels={target_reg: "Crime Rate (normalised 0–1)"},
             )
             fig2.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#e6edf3", bargap=0.05,
+                font_color="#F4EEE4", bargap=0.05,
                 margin=dict(t=10, b=10, l=10, r=10),
                 height=260,
-                yaxis=dict(gridcolor="#21262d"),
-                xaxis=dict(gridcolor="#21262d"),
+                yaxis=dict(gridcolor="#30261B"),
+                xaxis=dict(gridcolor="#30261B"),
             )
             st.plotly_chart(fig2, use_container_width=True, key="home_reg_hist")
         except Exception as e:
             st.warning(f"Could not load regression data: {e}")
 
+    
+    with d3:
+        try:
+            df_cluster = load_cc_data()
+
+            st.markdown("Credit Card Clustering")
+
+            mc1, mc2, mc3 = st.columns(3)
+            mc1.metric("Rows", f"{len(df_cluster):,}")
+            mc2.metric("Features", f"{df_cluster.shape[1]}")
+            mc3.metric("Clusters (k)", "4")
+
+            st.caption("Customer segmentation using K-Means clustering")
+
+        # Cluster evaluation metrics from saved metadata
+            try:
+                with open(CLUST_DIR / "models" / "cluster_meta.json", "r") as f:
+                    cluster_meta = json.load(f)
+
+                st.metric(
+                "Silhouette Score",
+                f"{cluster_meta['metrics']['Silhouette']:.4f}"
+                 )
+                st.metric(
+                "Davies-Bouldin Index",
+                f"{cluster_meta['metrics']['Davies-Bouldin']:.4f}"
+                )
+            except (FileNotFoundError, KeyError, TypeError, ValueError):
+                st.caption("Saved clustering metrics are unavailable.")
+
+        # Feature distribution
+            feature = (
+            "BALANCE"
+            if "BALANCE" in df_cluster.columns
+            else df_cluster.select_dtypes(include="number").columns[0]
+        )
+
+            fig3 = px.histogram(
+            df_cluster,
+            x=feature,
+            nbins=40,
+            color_discrete_sequence=["#C9A24D"],
+            labels={feature: feature.replace("_", " ").title()},
+        )
+
+            fig3.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font_color="#F4EEE4",
+            bargap=0.05,
+            margin=dict(t=10, b=10, l=10, r=10),
+            height=260,
+            yaxis=dict(gridcolor="#30261B"),
+            xaxis=dict(gridcolor="#30261B"),
+        )
+
+            st.plotly_chart(
+            fig3,
+            use_container_width=True,
+            key="home_cluster_hist",
+        )
+
+        except Exception as e:
+            st.warning(f"Could not load clustering data: {e}")
     st.markdown("---")
-    st.markdown("### 🏆 Model Leaderboard — Classification")
-    metrics_df = load_cls_metrics().sort_values("Accuracy", ascending=False).reset_index(drop=True)
-    metrics_df.index += 1
-    metrics_df_display = metrics_df.copy()
-    for col in ["Accuracy", "Weighted F1", "ROC-AUC"]:
-        metrics_df_display[col] = metrics_df_display[col].map(lambda x: f"{x:.4f}")
-    st.dataframe(
-        metrics_df_display.style.apply(
-            lambda s: ["background-color:#1a3a2a; color:#3fb950; font-weight:bold"
-                       if i == 0 else "" for i in range(len(s))],
-            axis=0
-        ),
-        use_container_width=True,
-        hide_index=False,
-    )
 
 
 # ═══════════════════════════════════════════════════════════════
 #  PAGE: CLASSIFICATION
 # ═══════════════════════════════════════════════════════════════
-elif page == "🔭  Classification":
-    st.title("🔭 Star Classification")
-    st.markdown("<p style='color:#8b949e'>Classify an astronomical observation as <b>Galaxy</b>, <b>QSO</b>, or <b>Star</b> using Sloan Digital Sky Survey (SDSS) photometric features.</p>", unsafe_allow_html=True)
+elif page == "Classification":
+    st.title(" Star Classification")
+    st.markdown("<p style='color:#B7A895'>Classify an astronomical observation as <b>Galaxy</b>, <b>QSO</b>, or <b>Star</b> using Sloan Digital Sky Survey (SDSS) photometric features.</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     # --- load artifacts ---
@@ -482,10 +478,10 @@ elif page == "🔭  Classification":
         cls_scaler, cls_encoder, cls_feat_cols, cls_bounds = load_cls_artifacts()
         cls_models = load_cls_models()
     except FileNotFoundError:
-        st.error("⚠️ Artifacts not found. Please run `python save_artifacts.py` first.")
+        st.error(" Artifacts not found. Please run `python save_artifacts.py` first.")
         st.stop()
 
-    tab_pred, tab_compare, tab_info = st.tabs(["🎯 Predict", "📊 Model Comparison", "ℹ️ Feature Guide"])
+    tab_pred, tab_compare, tab_info = st.tabs([" Predict", " Model Comparison", "Feature Guide"])
     try:
         cls_metrics_df = load_cls_metrics()
         cls_metrics_by_model = cls_metrics_df.set_index("Model").to_dict(orient="index")
@@ -508,7 +504,7 @@ elif page == "🔭  Classification":
 
         st.markdown("---")
         st.markdown("### Enter Observation Features")
-        st.markdown("<div class='info-banner'>💡 Hover the <b>?</b> icons for feature descriptions. Default values are dataset medians.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-banner'> Hover the <b>?</b> icons for feature descriptions. Default values are dataset medians.</div>", unsafe_allow_html=True)
 
         # Load data to get medians for defaults
         df_cls = load_cls_data()
@@ -558,8 +554,8 @@ elif page == "🔭  Classification":
             if hasattr(model, "predict_proba"):
                 proba = model.predict_proba(X_in)[0]
 
-            color = CLASS_COLORS.get(pred_class, "#58a6ff")
-            icon  = CLASS_ICONS.get(pred_class, "🔭")
+            color = CLASS_COLORS.get(pred_class, "#D6AD55")
+            icon  = CLASS_ICONS.get(pred_class, "")
 
             st.markdown(f"""
 <div class='pred-box' style='border-color:{color}'>
@@ -574,22 +570,22 @@ elif page == "🔭  Classification":
                 prob_fig = go.Figure(go.Bar(
                     x=classes,
                     y=proba,
-                    marker_color=[CLASS_COLORS.get(c, "#58a6ff") for c in classes],
+                    marker_color=[CLASS_COLORS.get(c, "#D6AD55") for c in classes],
                     text=[f"{p:.1%}" for p in proba],
                     textposition="outside",
                 ))
                 prob_fig.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#e6edf3", height=320,
-                    yaxis=dict(range=[0, 1.15], gridcolor="#21262d", tickformat=".0%"),
-                    xaxis=dict(gridcolor="#21262d"),
+                    font_color="#F4EEE4", height=320,
+                    yaxis=dict(range=[0, 1.15], gridcolor="#30261B", tickformat=".0%"),
+                    xaxis=dict(gridcolor="#30261B"),
                     margin=dict(t=30, b=10),
                 )
                 st.plotly_chart(prob_fig, use_container_width=True, key="cls_proba")
 
     # ── TAB: MODEL COMPARISON ────────────────────────────────
     with tab_compare:
-        st.markdown("### 📊 All 10 Models — Performance Comparison")
+        st.markdown("###  All 10 Models — Performance Comparison")
         metrics_df = cls_metrics_df.copy()
 
         metric_choice = st.selectbox("Metric to highlight", ["Accuracy", "Weighted F1", "ROC-AUC"], key="cls_metric_choice")
@@ -597,15 +593,15 @@ elif page == "🔭  Classification":
             metrics_df.sort_values(metric_choice, ascending=True),
             x=metric_choice, y="Model", orientation="h",
             color=metric_choice,
-            color_continuous_scale=[[0, "#1a3a2a"], [0.5, "#238636"], [1, "#3fb950"]],
+            color_continuous_scale=[[0, "#3B2D1D"], [0.5, "#8C6A32"], [1, "#C6A04A"]],
             text=metric_choice,
         )
         fig_bar.update_traces(texttemplate="%{text:.4f}", textposition="outside")
         fig_bar.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#e6edf3", height=430,
-            xaxis=dict(range=[0.85, 1.01], gridcolor="#21262d"),
-            yaxis=dict(gridcolor="#21262d"),
+            font_color="#F4EEE4", height=430,
+            xaxis=dict(range=[0.85, 1.01], gridcolor="#30261B"),
+            yaxis=dict(gridcolor="#30261B"),
             coloraxis_showscale=False,
             margin=dict(t=20, b=20),
         )
@@ -628,11 +624,11 @@ elif page == "🔭  Classification":
             ))
         radar_fig.update_layout(
             polar=dict(
-                bgcolor="#161b22",
-                radialaxis=dict(visible=True, range=[0.85, 1.0], gridcolor="#30363d", color="#8b949e"),
-                angularaxis=dict(gridcolor="#30363d", color="#8b949e"),
+                bgcolor="#211B15",
+                radialaxis=dict(visible=True, range=[0.85, 1.0], gridcolor="#493B2D", color="#B7A895"),
+                angularaxis=dict(gridcolor="#493B2D", color="#B7A895"),
             ),
-            paper_bgcolor="rgba(0,0,0,0)", font_color="#e6edf3",
+            paper_bgcolor="rgba(0,0,0,0)", font_color="#F4EEE4",
             height=440, legend=dict(font_size=11),
             margin=dict(t=30, b=20),
         )
@@ -640,13 +636,13 @@ elif page == "🔭  Classification":
 
     # ── TAB: FEATURE GUIDE ───────────────────────────────────
     with tab_info:
-        st.markdown("### ℹ️ Feature Reference")
+        st.markdown("### ℹ Feature Reference")
         rows = [(f, d) for f, d in FEATURE_TOOLTIPS.items()]
         ftable = pd.DataFrame(rows, columns=["Feature", "Description"])
         st.dataframe(ftable, use_container_width=True, hide_index=True, height=520)
 
         st.markdown("---")
-        st.markdown("### 🔭 Dataset Overview")
+        st.markdown("###  Dataset Overview")
         df_cls = load_cls_data()
         a, b = st.columns(2)
         with a:
@@ -655,7 +651,7 @@ elif page == "🔭  Classification":
             vc.columns = ["Class", "Count"]
             fig_pie = px.pie(vc, names="Class", values="Count",
                              color="Class", color_discrete_map=CLASS_COLORS, hole=0.5)
-            fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="#e6edf3", height=300,
+            fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", font_color="#F4EEE4", height=300,
                                   margin=dict(t=10, b=10))
             st.plotly_chart(fig_pie, use_container_width=True, key="cls_info_pie")
         with b:
@@ -666,37 +662,43 @@ elif page == "🔭  Classification":
 # ═══════════════════════════════════════════════════════════════
 #  PAGE: REGRESSION
 # ═══════════════════════════════════════════════════════════════
-elif page == "📈  Regression":
-    st.title("📈 Community Crime Rate Predictor")
-    st.markdown("<p style='color:#8b949e'>Predict the violent crime rate per capita for a US community using socioeconomic and demographic features (Communities & Crime dataset).</p>", unsafe_allow_html=True)
+elif page == "Regression":
+    st.title(" Community Crime Rate Predictor")
+    st.markdown("<p style='color:#B7A895'>Predict the violent crime rate per capita for a US community using socioeconomic and demographic features (Communities & Crime dataset).</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     # load
     try:
         reg_imputer, reg_scaler, reg_feat_cols, reg_bounds = load_reg_artifacts()
     except FileNotFoundError:
-        st.error("⚠️ Artifacts not found. Please run `python save_artifacts.py` first.")
+        st.error(" Artifacts not found. Please run `python save_artifacts.py` first.")
         st.stop()
 
     df_reg, target_reg = load_reg_data()
 
+    # Read the complete evaluation leaderboard generated from the same split
+    # and preprocessing as the regression notebook / saved model artifacts.
+    reg_metrics_path = os.path.join(REG_DIR, "regression_metrics.csv")
+    if not os.path.exists(reg_metrics_path):
+        st.error("Regression metrics file is missing. Ensure Regression Track A/regression_metrics.csv is included in the project.")
+        st.stop()
+    reg_metrics_df = pd.read_csv(reg_metrics_path)
+    required_reg_columns = {"Model", "R²", "RMSE", "MAE"}
+    if not required_reg_columns.issubset(reg_metrics_df.columns):
+        st.error("Regression metrics file must contain Model, R², RMSE, and MAE columns.")
+        st.stop()
+    reg_metrics_df = reg_metrics_df.drop_duplicates(subset=["Model"], keep="last")
     REG_METRICS = {
-        "Linear Regression":     {"R²": 0.6830, "RMSE": 0.1307, "MAE": 0.0949},
-        "Ridge Regression":      {"R²": 0.6820, "RMSE": 0.1309, "MAE": 0.0950},
-        "Lasso Regression":      {"R²": 0.6793, "RMSE": 0.1314, "MAE": 0.0939},
-        "ElasticNet Regression": {"R²": 0.6811, "RMSE": 0.1310, "MAE": 0.0945},
-        "Decision Tree":         {"R²": 0.3388, "RMSE": 0.1887, "MAE": 0.1289},
-        "Random Forest":         {"R²": 0.6672, "RMSE": 0.1339, "MAE": 0.0957},
-        "Gradient Boosting":     {"R²": 0.6830, "RMSE": 0.1307, "MAE": 0.0902},
-        "SVR":                   {"R²": 0.6261, "RMSE": 0.1419, "MAE": 0.1034},
-        "KNN":                   {"R²": 0.5983, "RMSE": 0.1471, "MAE": 0.0994},
+        row["Model"]: {"R²": float(row["R²"]), "RMSE": float(row["RMSE"]), "MAE": float(row["MAE"])}
+        for _, row in reg_metrics_df.iterrows()
     }
 
-    # Models in the regression track that need scaled data
+    # Models trained on standardized features in save_reg_models.py.
     REG_NEEDS_SCALE = {"Linear Regression", "Ridge Regression", "Lasso Regression",
-                       "ElasticNet Regression", "SVR", "KNN"}
+                       "ElasticNet Regression", "Polynomial Regression (PCA=10)",
+                       "SVR", "KNN"}
 
-    tab_pred_r, tab_compare_r, tab_data_r = st.tabs(["🎯 Predict", "📊 Model Comparison", "📋 Dataset"])
+    tab_pred_r, tab_compare_r, tab_data_r = st.tabs([" Predict", " Model Comparison", " Dataset"])
 
     with tab_pred_r:
         st.markdown("### Select Model")
@@ -710,7 +712,7 @@ elif page == "📈  Regression":
 
         st.markdown("---")
         st.markdown("### Enter Community Features")
-        st.markdown("<div class='info-banner'>💡 All features are normalised to [0, 1] in the original dataset. Sliders reflect actual data range.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-banner'> All features are normalised to [0, 1] in the original dataset. Sliders reflect actual data range.</div>", unsafe_allow_html=True)
 
         # top 20 most correlated features for a simpler UX
         feature_subset = [f for f in reg_feat_cols if f in df_reg.columns]
@@ -767,33 +769,29 @@ elif page == "📈  Regression":
             try:
                 import glob
                 # try to load any regression model pkl matching name
-                name_map = {
-                    "Linear Regression":     "linear",
-                    "Ridge Regression":      "ridge",
-                    "Lasso Regression":      "lasso",
-                    "ElasticNet Regression": "elasticnet",
-                    "Decision Tree":         "decision_tree",
-                    "Random Forest":         "random_forest",
-                    "Gradient Boosting":     "gradient_boosting",
-                    "SVR":                   "svr",
-                    "KNN":                   "knn",
+                model_files = {
+                    "Linear Regression": "linear_regression.pkl",
+                    "Ridge Regression": "ridge_regression.pkl",
+                    "Lasso Regression": "lasso_regression.pkl",
+                    "ElasticNet Regression": "elasticnet_regression.pkl",
+                    "Polynomial Regression (PCA=10)": "polynomial_regression_pca10.pkl",
+                    "Decision Tree": "decision_tree.pkl",
+                    "Random Forest": "random_forest.pkl",
+                    "Gradient Boosting": "gradient_boosting.pkl",
+                    "SVR": "svr.pkl",
+                    "KNN": "knn.pkl",
                 }
-                key = name_map.get(reg_model_name, "").lower()
-                pkl_files = glob.glob(os.path.join(REG_MODELS, f"*{key}*.pkl"))
-                # filter out artifact files
-                pkl_files = [p for p in pkl_files if not any(x in p for x in ["scaler", "imputer", "feature", "clip"])]
-                if pkl_files:
-                    reg_model_obj = joblib.load(pkl_files[0])
-                    pred_val = float(reg_model_obj.predict(X_r_in)[0])
-                else:
-                    raise FileNotFoundError
-            except Exception:
-                # fall back: estimate from model metrics
-                pred_val = float(df_reg[target_reg].mean())
-                st.info("ℹ️ Model .pkl not found for regression — showing dataset mean as demo. Re-run the regression notebook and save models to enable live predictions.")
+                model_path = os.path.join(REG_MODELS, model_files[reg_model_name])
+                if not os.path.isfile(model_path):
+                    raise FileNotFoundError(f"Required model file not found: {model_path}")
+                reg_model_obj = joblib.load(model_path)
+                pred_val = float(reg_model_obj.predict(X_r_in)[0])
+            except Exception as exc:
+                st.error(f"Could not generate a real prediction for {reg_model_name}: {exc}. Check that the matching model artifact is present and compatible. No dataset-mean fallback was used.")
+                st.stop()
 
             pred_pct = pred_val * 100
-            level = "🟢 Low" if pred_val < 0.25 else ("🟡 Moderate" if pred_val < 0.5 else "🔴 High")
+            level = " Low" if pred_val < 0.25 else (" Moderate" if pred_val < 0.5 else " High")
 
             st.markdown(f"""
 <div class='pred-box'>
@@ -806,28 +804,28 @@ elif page == "📈  Regression":
             gauge = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=pred_val,
-                number={"valueformat": ".4f", "font": {"color": "#58a6ff", "size": 36}},
+                number={"valueformat": ".4f", "font": {"color": "#D6AD55", "size": 36}},
                 gauge={
-                    "axis": {"range": [0, 1], "tickcolor": "#8b949e"},
-                    "bar": {"color": "#388bfd"},
+                    "axis": {"range": [0, 1], "tickcolor": "#B7A895"},
+                    "bar": {"color": "#B78A3F"},
                     "steps": [
-                        {"range": [0, 0.25],  "color": "#1a3a2a"},
+                        {"range": [0, 0.25],  "color": "#3B2D1D"},
                         {"range": [0.25, 0.5], "color": "#3a2a10"},
                         {"range": [0.5, 1.0],  "color": "#3a1010"},
                     ],
-                    "threshold": {"line": {"color": "#f78166", "width": 3}, "thickness": 0.75, "value": pred_val},
-                    "bgcolor": "#161b22",
-                    "bordercolor": "#30363d",
+                    "threshold": {"line": {"color": "#C77D52", "width": 3}, "thickness": 0.75, "value": pred_val},
+                    "bgcolor": "#211B15",
+                    "bordercolor": "#493B2D",
                 },
             ))
             gauge.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)", font_color="#e6edf3",
+                paper_bgcolor="rgba(0,0,0,0)", font_color="#F4EEE4",
                 height=280, margin=dict(t=20, b=20),
             )
             st.plotly_chart(gauge, use_container_width=True, key="reg_gauge")
 
     with tab_compare_r:
-        st.markdown("### 📊 Regression Model Comparison")
+        st.markdown("###  Regression Model Comparison")
         reg_m_df = pd.DataFrame(REG_METRICS).T.reset_index().rename(columns={"index": "Model"})
 
         reg_metric_c = st.selectbox("Sort by metric", ["R²", "RMSE", "MAE"], key="reg_metric_c")
@@ -836,16 +834,16 @@ elif page == "📈  Regression":
             reg_m_df.sort_values(reg_metric_c, ascending=asc),
             x=reg_metric_c, y="Model", orientation="h",
             color=reg_metric_c,
-            color_continuous_scale=[[0, "#1a3a2a"], [0.5, "#238636"], [1, "#3fb950"]] if not asc
-                                   else [[0, "#3fb950"], [0.5, "#238636"], [1, "#1a3a2a"]],
+            color_continuous_scale=[[0, "#3B2D1D"], [0.5, "#8C6A32"], [1, "#C6A04A"]] if not asc
+                                   else [[0, "#C6A04A"], [0.5, "#8C6A32"], [1, "#3B2D1D"]],
             text=reg_metric_c,
         )
         fig_reg_bar.update_traces(texttemplate="%{text:.4f}", textposition="outside")
         fig_reg_bar.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#e6edf3", height=400,
-            xaxis=dict(gridcolor="#21262d"),
-            yaxis=dict(gridcolor="#21262d"),
+            font_color="#F4EEE4", height=400,
+            xaxis=dict(gridcolor="#30261B"),
+            yaxis=dict(gridcolor="#30261B"),
             coloraxis_showscale=False,
             margin=dict(t=20, b=20),
         )
@@ -856,7 +854,7 @@ elif page == "📈  Regression":
                      use_container_width=True)
 
     with tab_data_r:
-        st.markdown("### 📋 Regression Dataset Explorer")
+        st.markdown("###  Regression Dataset Explorer")
         st.markdown(f"**Target:** `{target_reg}` — violent crimes per 100K population (normalised 0–1)")
         r1, r2, r3 = st.columns(3)
         r1.metric("Rows", f"{len(df_reg):,}")
@@ -878,9 +876,9 @@ elif page == "📈  Regression":
         )
         fig_corr.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#e6edf3", height=380,
-            xaxis=dict(gridcolor="#21262d"),
-            yaxis=dict(gridcolor="#21262d"),
+            font_color="#F4EEE4", height=380,
+            xaxis=dict(gridcolor="#30261B"),
+            yaxis=dict(gridcolor="#30261B"),
             coloraxis_showscale=False,
             margin=dict(t=20, b=20),
         )
@@ -890,12 +888,12 @@ elif page == "📈  Regression":
 # ═══════════════════════════════════════════════════════════════
 #  PAGE: CLUSTERING
 # ═══════════════════════════════════════════════════════════════
-elif page == "🔵  Clustering":
-    st.title("🔵 Clustering")
-    st.markdown("<p style='color:#8b949e'>Credit Card Customer Segmentation (notebook model) · Interactive Explorer on any dataset.</p>", unsafe_allow_html=True)
+elif page == "Clustering":
+    st.title(" Clustering")
+    st.markdown("<p style='color:#B7A895'>Credit Card Customer Segmentation (notebook model) · Interactive Explorer on any dataset.</p>", unsafe_allow_html=True)
     st.markdown("---")
 
-    tab_cc, tab_explore = st.tabs(["💳 Credit Card Segmentation", "🔬 Interactive Explorer"])
+    tab_cc, tab_explore = st.tabs([" Credit Card Segmentation", " Interactive Explorer"])
 
     # ────────────────────────────────────────────────────────────
     #  TAB 1 — CREDIT CARD SEGMENTATION (saved notebook model)
@@ -908,25 +906,45 @@ elif page == "🔵  Clustering":
             st.error(f"Clustering artifacts not found: {e}. Run the last cell of clustering.ipynb first.")
             st.stop()
 
-        RAW_FEATURES_CC = clust_meta["raw_features"]
-        ALL_FEATURES_CC = clust_meta["feature_names"]
-        K = clust_meta["k"]
-        CLUSTER_COLORS  = px.colors.qualitative.Plotly
-        CLUSTER_NAMES   = {0: "Cluster 0", 1: "Cluster 1", 2: "Cluster 2", 3: "Cluster 3"}
+        # ── Extract metadata with fallbacks ───────────────────
+        RAW_FEATURES_CC = clust_meta.get("raw_features")
+        if not RAW_FEATURES_CC:
+            RAW_FEATURES_CC = [c for c in cc_data.columns if c != "CUST_ID"]
+        ALL_FEATURES_CC = clust_meta.get("final_features") or clust_meta.get("feature_names")
+        if not ALL_FEATURES_CC:
+            ALL_FEATURES_CC = [c for c in clust_centroids.columns if c != "cluster"]
+        K = clust_meta.get("k_final") or clust_meta.get("k", getattr(clust_km, "n_clusters", 4))
+        n_customers = clust_meta.get("n_customers") or clust_meta.get("n_samples", len(cc_data))
+
+        # metrics may be nested under "kmeans" sub-key or flat
+        _raw_metrics = clust_meta.get("metrics", {})
+        if "kmeans" in _raw_metrics:
+            _km_metrics = _raw_metrics["kmeans"]
+        else:
+            _km_metrics = _raw_metrics
+        sil_score = _km_metrics.get("silhouette") or _km_metrics.get("Silhouette", float("nan"))
+        db_score  = _km_metrics.get("davies_bouldin") or _km_metrics.get("Davies-Bouldin", float("nan"))
+
+        # Segment names and colours from the notebook metadata
+        _segments = clust_meta.get("segments", [])
+        CLUSTER_COLORS = [s.get("color", px.colors.qualitative.Plotly[i % 10]) for i, s in enumerate(_segments)] \
+                         if _segments else px.colors.qualitative.Plotly
+        CLUSTER_NAMES = {s["id"]: s.get("name", f"Cluster {s['id']}") for s in _segments} \
+                        if _segments else {i: f"Cluster {i}" for i in range(K)}
 
         # ── Top metrics row ──────────────────────────────────
-        st.markdown("### 📊 Model Overview")
+        st.markdown("###  Model Overview")
         m1, m2, m3, m4, m5 = st.columns(5)
         m1.metric("Algorithm",         "K-Means")
         m2.metric("Clusters (k)",      str(K))
-        m3.metric("Customers",         f"{clust_meta['n_samples']:,}")
-        m4.metric("Silhouette ↑",      f"{clust_meta['metrics']['Silhouette']:.4f}")
-        m5.metric("Davies-Bouldin ↓",  f"{clust_meta['metrics']['Davies-Bouldin']:.4f}")
+        m3.metric("Customers",         f"{n_customers:,}")
+        m4.metric("Silhouette ↑",      f"{sil_score:.4f}")
+        m5.metric("Davies-Bouldin ↓",  f"{db_score:.4f}")
 
         st.markdown("---")
 
         # ── Tabs within the CC tab ───────────────────────────
-        st_cc1, st_cc2, st_cc3, st_cc4 = st.tabs(["📈 Cluster Profiles", "🗺️ PCA Scatter", "📋 Cluster Sizes", "🎯 Predict Cluster"])
+        st_cc1, st_cc2, st_cc3, st_cc4 = st.tabs([" Cluster Profiles", " PCA Scatter", " Cluster Sizes", " Predict Cluster"])
 
         # ── Cluster Profiles (centroid radar / bar) ──────────
         with st_cc1:
@@ -955,9 +973,9 @@ elif page == "🔵  Clustering":
                 )
                 fig_prof.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#e6edf3", height=480,
-                    xaxis=dict(gridcolor="#21262d", tickangle=-30),
-                    yaxis=dict(gridcolor="#21262d", title="Scaled value (std devs)"),
+                    font_color="#F4EEE4", height=480,
+                    xaxis=dict(gridcolor="#30261B", tickangle=-30),
+                    yaxis=dict(gridcolor="#30261B", title="Scaled value (std devs)"),
                     legend_title_text="Cluster",
                     margin=dict(t=50, b=60),
                 )
@@ -1010,7 +1028,7 @@ elif page == "🔵  Clustering":
             evr = pca_viz.explained_variance_ratio_ * 100
             fig_pca.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#e6edf3", height=540,
+                font_color="#F4EEE4", height=540,
                 legend_title_text="Cluster",
                 margin=dict(t=50, b=20),
             )
@@ -1020,11 +1038,18 @@ elif page == "🔵  Clustering":
         # ── Cluster Sizes ────────────────────────────────────
         with st_cc3:
             st.markdown("### Cluster Size Distribution")
-            sizes = clust_meta["cluster_sizes"]
-            size_df = pd.DataFrame({
-                "Cluster": [f"Cluster {k}" for k in sizes],
-                "Customers": list(sizes.values()),
-            })
+            # Build sizes from segments metadata or fall back to label counts
+            if _segments:
+                size_df = pd.DataFrame({
+                    "Cluster": [CLUSTER_NAMES.get(s["id"], f"Cluster {s['id']}") for s in _segments],
+                    "Customers": [s["size"] for s in _segments],
+                })
+            else:
+                _lbl_counts = clust_labels_df.iloc[:, 0].value_counts().sort_index()
+                size_df = pd.DataFrame({
+                    "Cluster": [f"Cluster {i}" for i in _lbl_counts.index],
+                    "Customers": _lbl_counts.values,
+                })
             size_df["Percent"] = (size_df["Customers"] / size_df["Customers"].sum() * 100).round(1)
 
             fig_sz2 = px.bar(
@@ -1037,10 +1062,10 @@ elif page == "🔵  Clustering":
             fig_sz2.update_traces(textposition="outside")
             fig_sz2.update_layout(
                 paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                font_color="#e6edf3", height=380,
+                font_color="#F4EEE4", height=380,
                 showlegend=False,
-                xaxis=dict(gridcolor="#21262d"),
-                yaxis=dict(gridcolor="#21262d"),
+                xaxis=dict(gridcolor="#30261B"),
+                yaxis=dict(gridcolor="#30261B"),
                 margin=dict(t=50, b=20),
             )
             st.plotly_chart(fig_sz2, use_container_width=True, key="cc_size_bar")
@@ -1048,7 +1073,7 @@ elif page == "🔵  Clustering":
 
         # ── Predict Cluster for New Customer ─────────────────
         with st_cc4:
-            st.markdown("### 🎯 Predict Cluster for a New Customer")
+            st.markdown("###  Predict Cluster for a New Customer")
             st.markdown("<div class='info-banner'>Enter raw credit card usage values. The notebook's fitted preprocessor (engineer → impute → scale) will be applied automatically before prediction.</div>", unsafe_allow_html=True)
 
             med_vals = cc_data[RAW_FEATURES_CC].median()
@@ -1065,7 +1090,7 @@ elif page == "🔵  Clustering":
                     value=med_v, step=step_v, key=f"cc_inp_{feat}"
                 )
 
-            predict_cc_btn = st.button("🔍 Predict Customer Segment", use_container_width=True, key="cc_predict_btn")
+            predict_cc_btn = st.button(" Predict Customer Segment", use_container_width=True, key="cc_predict_btn")
 
             if predict_cc_btn:
                 row_df = pd.DataFrame([input_cc])[RAW_FEATURES_CC]
@@ -1080,7 +1105,7 @@ elif page == "🔵  Clustering":
 <div class='pred-box'>
   <div class='pred-label'>Predicted Customer Segment</div>
   <div class='pred-value' style='color:{CLUSTER_COLORS[cluster_id]}'>Cluster {cluster_id}</div>
-  <div class='pred-sub'>Confidence score: {confidence:.1%} &nbsp;|&nbsp; Distance to centroid: {dists[cluster_id]:.4f}</div>
+  <div class='pred-sub'>Relative distance score (heuristic): {confidence:.1%} &nbsp;|&nbsp; Distance to centroid: {dists[cluster_id]:.4f}</div>
 </div>""", unsafe_allow_html=True)
 
                 st.markdown("#### Centroid Profile of Predicted Cluster")
@@ -1092,14 +1117,14 @@ elif page == "🔵  Clustering":
 
                 fig_cent = px.bar(
                     cent_plot, x="Feature", y="Scaled Value", color="Direction",
-                    color_discrete_map={"Above Avg": "#3fb950", "Below Avg": "#f78166"},
+                    color_discrete_map={"Above Avg": "#C6A04A", "Below Avg": "#C77D52"},
                     title=f"Top 10 Distinguishing Features — Cluster {cluster_id}",
                 )
                 fig_cent.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                    font_color="#e6edf3", height=380,
-                    xaxis=dict(gridcolor="#21262d", tickangle=-25),
-                    yaxis=dict(gridcolor="#21262d"),
+                    font_color="#F4EEE4", height=380,
+                    xaxis=dict(gridcolor="#30261B", tickangle=-25),
+                    yaxis=dict(gridcolor="#30261B"),
                     margin=dict(t=50, b=60),
                 )
                 st.plotly_chart(fig_cent, use_container_width=True, key="cc_cent_bar")
@@ -1108,12 +1133,16 @@ elif page == "🔵  Clustering":
     #  TAB 2 — INTERACTIVE EXPLORER
     # ────────────────────────────────────────────────────────────
     with tab_explore:
-        st.markdown("### 🔬 Run clustering on any dataset interactively")
+        st.markdown("###  Run clustering on any dataset interactively")
         c_left, c_right = st.columns([1, 2])
 
         with c_left:
-            st.markdown("#### ⚙️ Configuration")
-            dataset_choice = st.selectbox("Dataset", ["Star Classification (SDSS)", "Community Crime"], key="clust_dataset")
+            st.markdown("####  Configuration")
+            dataset_choice = st.selectbox(
+                "Dataset",
+                ["Credit Card Clustering", "Star Classification (SDSS)", "Community Crime"],
+                key="clust_dataset",
+            )
             algo_choice    = st.selectbox("Algorithm", ["K-Means", "DBSCAN", "Agglomerative"], key="clust_algo")
 
             if algo_choice == "K-Means":
@@ -1138,25 +1167,36 @@ elif page == "🔵  Clustering":
         with c_right:
             if run_btn or show_elbow:
                 with st.spinner("Loading & preprocessing data…"):
-                    if "Star" in dataset_choice:
+                    if dataset_choice == "Credit Card Clustering":
+                        df_raw_ex = load_cc_data()
+                        X_raw_ex = df_raw_ex.copy()
+                        y_true_ex = None
+                    elif "Star" in dataset_choice:
                         df_raw_ex = load_cls_data()
-                        X_raw_ex  = df_raw_ex.drop(columns=["class"], errors="ignore")
-                        y_true_ex = df_raw_ex["class"].values if "class" in df_raw_ex.columns else None
+                        X_raw_ex = df_raw_ex.drop(columns=["class"], errors="ignore")
+                        y_true_ex = df_raw_ex["class"] if "class" in df_raw_ex.columns else None
                     else:
                         df_raw_ex, tgt_r_ex = load_reg_data()
-                        X_raw_ex  = df_raw_ex.drop(columns=[tgt_r_ex], errors="ignore")
+                        X_raw_ex = df_raw_ex.drop(columns=[tgt_r_ex], errors="ignore")
                         y_true_ex = None
 
-                    X_raw_ex = X_raw_ex.sample(frac=sample_frac, random_state=42).reset_index(drop=True)
-                    if y_true_ex is not None and "Star" in dataset_choice:
-                        y_true_ex = load_cls_data()["class"].sample(frac=sample_frac, random_state=42).values
+                    # Use the same sampled row indices for features and optional true labels.
+                    sample_n_ex = max(3, min(len(X_raw_ex), int(round(len(X_raw_ex) * sample_frac))))
+                    sample_idx_ex = X_raw_ex.sample(n=sample_n_ex, random_state=42).index
+                    X_raw_ex = X_raw_ex.loc[sample_idx_ex].reset_index(drop=True)
+                    if y_true_ex is not None:
+                        y_true_ex = y_true_ex.loc[sample_idx_ex].reset_index(drop=True)
 
-                    X_num_ex = X_raw_ex.select_dtypes(include=[np.number]).fillna(
-                        X_raw_ex.select_dtypes(include=[np.number]).median())
-                    sc_ex     = SkScaler()
-                    X_sc_ex   = sc_ex.fit_transform(X_num_ex)
-                    pca_ex    = PCA(n_components=n_pca_comp, random_state=42)
-                    X_pca_ex  = pca_ex.fit_transform(X_sc_ex)
+                    X_num_ex = X_raw_ex.select_dtypes(include=[np.number]).copy()
+                    X_num_ex = X_num_ex.replace([np.inf, -np.inf], np.nan)
+                    X_num_ex = X_num_ex.fillna(X_num_ex.median()).fillna(0)
+                    if X_num_ex.shape[1] < n_pca_comp:
+                        st.error(f"This dataset has only {X_num_ex.shape[1]} numeric features; choose fewer PCA components.")
+                        st.stop()
+                    sc_ex = SkScaler()
+                    X_sc_ex = sc_ex.fit_transform(X_num_ex)
+                    pca_ex = PCA(n_components=n_pca_comp, random_state=42)
+                    X_pca_ex = pca_ex.fit_transform(X_sc_ex)
 
                 if show_elbow and algo_choice == "K-Means":
                     with st.spinner("Computing elbow curve…"):
@@ -1166,19 +1206,23 @@ elif page == "🔵  Clustering":
                             km_e = KMeans(n_clusters=k, init="k-means++", n_init=5, random_state=42)
                             lb_e = km_e.fit_predict(X_sc_ex)
                             inertias_ex.append(km_e.inertia_)
-                            sil_ex.append(silhouette_score(X_sc_ex, lb_e, sample_size=min(1000, len(X_sc_ex))))
+                            n_labels_e = len(np.unique(lb_e))
+                            if 1 < n_labels_e < len(lb_e):
+                                sil_ex.append(silhouette_score(X_sc_ex, lb_e, sample_size=min(1000, len(X_sc_ex)), random_state=42))
+                            else:
+                                sil_ex.append(float("nan"))
 
                         fig_el = make_subplots(rows=1, cols=2, subplot_titles=["Inertia (Elbow)", "Silhouette"])
                         fig_el.add_trace(go.Scatter(x=list(k_range_ex), y=inertias_ex, mode="lines+markers",
-                                                     marker_color="#388bfd", name="Inertia"), row=1, col=1)
+                                                     marker_color="#B78A3F", name="Inertia"), row=1, col=1)
                         fig_el.add_trace(go.Scatter(x=list(k_range_ex), y=sil_ex, mode="lines+markers",
-                                                     marker_color="#3fb950", name="Silhouette"), row=1, col=2)
+                                                     marker_color="#C6A04A", name="Silhouette"), row=1, col=2)
                         fig_el.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                                              font_color="#e6edf3", height=340,
-                                              xaxis=dict(gridcolor="#21262d", title="k"),
-                                              xaxis2=dict(gridcolor="#21262d", title="k"),
-                                              yaxis=dict(gridcolor="#21262d"),
-                                              yaxis2=dict(gridcolor="#21262d"),
+                                              font_color="#F4EEE4", height=340,
+                                              xaxis=dict(gridcolor="#30261B", title="k"),
+                                              xaxis2=dict(gridcolor="#30261B", title="k"),
+                                              yaxis=dict(gridcolor="#30261B"),
+                                              yaxis2=dict(gridcolor="#30261B"),
                                               margin=dict(t=40, b=20), showlegend=False)
                         st.plotly_chart(fig_el, use_container_width=True, key="clust_elbow_fig")
 
@@ -1198,9 +1242,16 @@ elif page == "🔵  Clustering":
                     n_found = len(set(labels_c)) - (1 if -1 in labels_c else 0)
                     n_noise = (labels_c == -1).sum()
                     try:
-                        sil = silhouette_score(X_sc_ex, labels_c,
-                                               sample_size=min(2000, len(X_sc_ex))) if n_found > 1 else float("nan")
-                        db  = davies_bouldin_score(X_sc_ex, labels_c) if n_found > 1 else float("nan")
+                        valid_mask = labels_c != -1 if algo_choice == "DBSCAN" else np.ones(len(labels_c), dtype=bool)
+                        valid_labels = labels_c[valid_mask]
+                        valid_X = X_sc_ex[valid_mask]
+                        n_valid_clusters = len(np.unique(valid_labels))
+                        if n_valid_clusters > 1 and n_valid_clusters < len(valid_labels):
+                            sil = silhouette_score(valid_X, valid_labels,
+                                                   sample_size=min(2000, len(valid_X)), random_state=42)
+                            db = davies_bouldin_score(valid_X, valid_labels)
+                        else:
+                            sil, db = float("nan"), float("nan")
                     except Exception:
                         sil, db = float("nan"), float("nan")
 
@@ -1233,7 +1284,7 @@ elif page == "🔵  Clustering":
 
                     fig_sc_ex.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        font_color="#e6edf3", height=520, legend_title_text="Cluster",
+                        font_color="#F4EEE4", height=520, legend_title_text="Cluster",
                         margin=dict(t=50, b=20),
                     )
                     st.plotly_chart(fig_sc_ex, use_container_width=True, key="clust_scatter_ex")
@@ -1248,8 +1299,8 @@ elif page == "🔵  Clustering":
                     fig_sz_ex.update_traces(textposition="outside")
                     fig_sz_ex.update_layout(
                         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                        font_color="#e6edf3", height=320, showlegend=False,
-                        xaxis=dict(gridcolor="#21262d"), yaxis=dict(gridcolor="#21262d"),
+                        font_color="#F4EEE4", height=320, showlegend=False,
+                        xaxis=dict(gridcolor="#30261B"), yaxis=dict(gridcolor="#30261B"),
                         margin=dict(t=20, b=20),
                     )
                     st.plotly_chart(fig_sz_ex, use_container_width=True, key="clust_size_ex")
@@ -1258,122 +1309,9 @@ elif page == "🔵  Clustering":
 
             else:
                 st.markdown("""
-<div style='background:#161b22;border:1px dashed #30363d;border-radius:14px;
-            padding:60px 40px;text-align:center;color:#8b949e'>
-  <div style='font-size:3rem'>🔬</div>
-  <h3 style='color:#58a6ff'>Configure & Run Clustering</h3>
+<div style='background:#211B15;border:1px dashed #493B2D;border-radius:14px;
+            padding:60px 40px;text-align:center;color:#B7A895'>
+  <div style='font-size:3rem'></div>
+  <h3 style='color:#D6AD55'>Configure & Run Clustering</h3>
   <p>Choose a dataset, algorithm, and parameters on the left,<br>then click <b>▶ Run Clustering</b>.</p>
 </div>""", unsafe_allow_html=True)
-
-
-# ═══════════════════════════════════════════════════════════════
-#  PAGE: EDA EXPLORER
-# ═══════════════════════════════════════════════════════════════
-elif page == "📊  EDA Explorer":
-    st.title("📊 EDA Explorer")
-    st.markdown("<p style='color:#8b949e'>Interactively explore both datasets — distributions, correlations, scatter plots, and summary statistics.</p>", unsafe_allow_html=True)
-    st.markdown("---")
-
-    dataset_eda = st.radio("Select Dataset", ["🔭 Star Classification", "📈 Community Crime"], horizontal=True, key="eda_ds")
-
-    if "Star" in dataset_eda:
-        df_e = load_cls_data()
-        num_cols = df_e.select_dtypes(include=[np.number]).columns.tolist()
-        cat_col  = "class"
-        color_map = CLASS_COLORS
-        has_target_cat = True
-        target_e = None
-    else:
-        df_e, target_e = load_reg_data()
-        num_cols = df_e.select_dtypes(include=[np.number]).columns.tolist()
-        cat_col  = None
-        color_map = None
-        has_target_cat = False
-
-    tab_dist, tab_corr, tab_scatter, tab_raw = st.tabs(["📉 Distributions", "🌡️ Correlation", "🔀 Scatter", "🗃️ Raw Data"])
-
-    with tab_dist:
-        st.markdown("### Feature Distributions")
-        feat_sel = st.multiselect("Select features to plot", num_cols,
-                                  default=num_cols[:min(6, len(num_cols))], key="eda_dist_feats")
-        if feat_sel:
-            n_col_d = 3
-            rows_d  = [feat_sel[i:i+n_col_d] for i in range(0, len(feat_sel), n_col_d)]
-            for row_f in rows_d:
-                c_d = st.columns(n_col_d)
-                for col_d, feat in zip(c_d, row_f):
-                    with col_d:
-                        fig_d = px.histogram(df_e, x=feat, nbins=40,
-                                             color=cat_col if has_target_cat else None,
-                                             color_discrete_map=color_map,
-                                             marginal="box",
-                                             title=feat)
-                        fig_d.update_layout(
-                            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                            font_color="#e6edf3", height=300,
-                            margin=dict(t=30, b=10, l=10, r=10),
-                            showlegend=False,
-                            xaxis=dict(gridcolor="#21262d"),
-                            yaxis=dict(gridcolor="#21262d"),
-                        )
-                        st.plotly_chart(fig_d, use_container_width=True, key=f"eda_dist_{feat}")
-
-    with tab_corr:
-        st.markdown("### Correlation Heatmap")
-        max_feats = st.slider("Max features in heatmap", 5, min(40, len(num_cols)), 15, key="eda_corr_n")
-
-        # sort by variance for most-informative subset
-        top_var_feats = df_e[num_cols].var().sort_values(ascending=False).head(max_feats).index.tolist()
-        corr_m = df_e[top_var_feats].corr()
-
-        fig_hm = px.imshow(
-            corr_m, text_auto=".2f", aspect="auto",
-            color_continuous_scale="RdBu_r", zmin=-1, zmax=1,
-        )
-        fig_hm.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#e6edf3", height=600,
-            coloraxis_colorbar=dict(tickcolor="#e6edf3", title="r"),
-            margin=dict(t=30, b=20),
-        )
-        st.plotly_chart(fig_hm, use_container_width=True, key="eda_heatmap")
-
-    with tab_scatter:
-        st.markdown("### Feature Scatter Plot")
-        sc1, sc2 = st.columns(2)
-        x_feat = sc1.selectbox("X axis", num_cols, index=0, key="eda_sc_x")
-        y_feat = sc2.selectbox("Y axis", num_cols, index=min(1, len(num_cols)-1), key="eda_sc_y")
-        sample_n = st.slider("Sample size", 500, min(10000, len(df_e)), 3000, step=500, key="eda_sc_n")
-
-        df_sample = df_e.sample(n=min(sample_n, len(df_e)), random_state=42)
-        fig_sc2 = px.scatter(
-            df_sample, x=x_feat, y=y_feat,
-            color=cat_col if has_target_cat else target_e,
-            color_discrete_map=color_map,
-            color_continuous_scale="Viridis" if not has_target_cat else None,
-            opacity=0.6,
-            title=f"{x_feat} vs {y_feat}",
-            hover_data=[cat_col] if has_target_cat else [target_e],
-        )
-        fig_sc2.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#e6edf3", height=500,
-            xaxis=dict(gridcolor="#21262d"),
-            yaxis=dict(gridcolor="#21262d"),
-            margin=dict(t=40, b=20),
-        )
-        st.plotly_chart(fig_sc2, use_container_width=True, key="eda_scatter2")
-
-    with tab_raw:
-        st.markdown("### Raw Dataset Preview")
-        n_rows = st.slider("Rows to display", 10, 200, 50, step=10, key="eda_raw_n")
-        search_col = st.selectbox("Filter column", [None] + df_e.columns.tolist(), key="eda_raw_search")
-        df_disp = df_e.head(n_rows)
-        if search_col:
-            st.dataframe(df_disp[[search_col] + [c for c in df_disp.columns if c != search_col]],
-                         use_container_width=True, height=440)
-        else:
-            st.dataframe(df_disp, use_container_width=True, height=440)
-
-        st.markdown("**Summary Statistics**")
-        st.dataframe(df_e.describe().T.round(4), use_container_width=True)
