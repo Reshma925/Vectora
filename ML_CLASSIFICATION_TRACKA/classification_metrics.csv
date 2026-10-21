@@ -1,0 +1,11 @@
+Model,Accuracy,Weighted Precision,Weighted Recall,Weighted F1,ROC-AUC (OvR)
+Random Forest,0.9792,0.9791,0.9792,0.9791,0.9948
+Bagging Classifier,0.9791,0.979,0.9791,0.9789,0.9908
+Gradient Boosting,0.9785,0.9784,0.9785,0.9783,0.9945
+MLP Classifier,0.9726,0.9725,0.9726,0.9724,0.9925
+SVM,0.9668,0.967,0.9668,0.9666,0.9898
+Decision Tree,0.9654,0.9656,0.9654,0.9655,0.9687
+Logistic Regression,0.9612,0.9611,0.9612,0.9608,0.9872
+KNN,0.9292,0.9297,0.9292,0.9287,0.9675
+Gaussian Naive Bayes,0.924,0.9295,0.924,0.9256,0.9744
+AdaBoost,0.9212,0.9215,0.9212,0.9213,0.9708
